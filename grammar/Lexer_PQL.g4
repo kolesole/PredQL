@@ -114,8 +114,10 @@ NUM_COMP_OP
 
 /* the second argument is a string */
 STR_COMP_OP 
-    : NOT? LIKE 
-    | NOT? CONTAINS
+    : LIKE
+    | NOT LIKE 
+    | CONTAINS 
+    | NOT CONTAINS
     | ENDS WITH
     | STARTS WITH
     ;
