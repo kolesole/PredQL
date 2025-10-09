@@ -139,10 +139,12 @@ NOT_OP
 
 /* NUMBERS */
 FLOAT       
-    : '-'? DIGIT+ '.' DIGIT*
+    : DIGIT+ '.' DIGIT*
+    | '-' DIGIT+ '.' DIGIT*
     ;
 INT         
-    : '-'? DIGIT+                         
+    : DIGIT+
+    | '-' DIGIT+                         
     ;
 NUM         
     : FLOAT     
