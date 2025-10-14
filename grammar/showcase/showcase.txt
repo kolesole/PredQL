@@ -1,0 +1,26 @@
+ASSUMING COUNT(NOTIFICATIONS.*, 0, 7) > 2
+ASSUMING LIST_DISTINCT(COUPONS.type, 0, 3) CONTAINS '50 percent off'
+ASSUMING COUNT(NOTIFICATIONS.*, 0, 7) > 5 AND SUM(NOTIFICATIONS.LENGTH, 0, 7) > 10
+PREDICT LIST_DISTINCT(transaction.article_id, 0, 30) RANK TOP 12
+PREDICT LIST_DISTINCT(transaction.article_id, 0, 30) CLASSIFY
+PREDICT target.multicategorical_column RANK TOP 20
+PREDICT LIST_DISTINCT(transaction.category, 0, 30) CONTAINS "online"
+FOR EACH USERS.user_id
+FOR EACH STORES.store_id
+PREDICT SUM(PURCHASES.amount, 0, 30)
+PREDICT LIST_DISTINCT(PURCHASES.item_category, 0, 14)
+PREDICT CUSTOMERS.industry
+PREDICT SUM(PURCHASES.amount, 0, 30) > 10
+PREDICT LAST(STATUS.status, 0, 90) = 'INACTIVE'
+PREDICT SUM(PURCHASES.amount, 0, 30) > 10 OR COUNT(VIEWS.*, 0, 30) > 20
+PREDICT CUSTOMERS.industry = 'IT' AND CUSTOMERS.date_of_birth <= 1990-01-01
+PREDICT COUNT(transaction.* WHERE transaction.amount > 100)
+FOR EACH user.user_id WHERE user.country = 'US'
+FOR EACH user.user_id WHERE COUNT(views.id, -30, 0) > 0  
+FOR EACH user.user_id WHERE LIST_DISTINCT(purchases.item_category, -90, 0) CONTAINS 'Food'  
+FOR EACH user.user_id WHERE LAST(status.status, -1, 0) = 'ACTIVE'  
+FOR EACH user.user_id WHERE COUNT(transactions.*, -INF, 0) > 0  
+PREDICT COUNT(transaction.* WHERE transaction.value > 10, 0, 7)
+FOR EACH user.user_id WHERE COUNT(transaction.*, -7, 0) > 0
+PREDICT LIST_DISTINCT(transactions.article_id WHERE articles.product_type_name = 'Trousers' AND transactions.price >= 50, 0, 90, days)  
+FOR EACH user.user_id

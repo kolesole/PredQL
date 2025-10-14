@@ -2,8 +2,29 @@ parser grammar Parser_PQL ;
 
 options { tokenVocab=Lexer_PQL; }    // import tokens from the lexer grammar
 
-aggregation 
-    : AGGR_FUNC OPEN_PAREN ID DOT ID COMMA INT COMMA INT CLOSE_PAREN 
+query
+    : assuming
+    | for_each
+    | predict
+    | where
+    ;
+
+assuming    
+    : ASSUMING condition (LOGICAL_OP condition)*
+    ;
+
+for_each
+    : FOR_EACH ID DOT ID (where)? 
+    ;
+
+predict
+    : PREDICT aggregation (RANK_TOP INT | CLASSIFY)?
+    | PREDICT ID DOT ID (RANK_TOP INT | CLASSIFY)?
+    | PREDICT condition (RANK_TOP INT | CLASSIFY)?
+    ;
+    
+where
+    : WHERE condition (LOGICAL_OP condition)*
     ;
 
 condition
@@ -13,28 +34,22 @@ condition
     ;
 
 num_condition
-    : aggregation NUM_COMP_OP NUM
+    : aggregation NUM_COMP_OP (FLOAT | INT)
+    | ID DOT (ID | STAR) NUM_COMP_OP (FLOAT | INT)
     ;
 
 str_condition
     : aggregation STR_COMP_OP STRING
+    | ID DOT (ID | STAR) STR_COMP_OP STRING
     ;
 
 null_check_condition
     : aggregation NULL_CHECK_OP
+    | ID DOT (ID | STAR) NULL_CHECK_OP
     ;
 
-assuming    
-    : ASSUMING condition (LOGICAL_OP condition)*
-    ;
-
-for_each
-    : FOR_EACH ID DOT ID
-    ;
-
-predict
-    : PREDICT aggregation
-    | PREDICT ID DOT ID
+aggregation 
+    : AGGR_FUNC OPEN_PAREN ID DOT (ID | STAR) (where)? (COMMA INT COMMA INT)? CLOSE_PAREN 
     ;
 
 

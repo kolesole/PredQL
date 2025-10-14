@@ -5,57 +5,10 @@ lexer grammar Lexer_PQL ;
 fragment UPPERCASE      : [A-Z]                   ;
 fragment LOWERCASE      : [a-z]                   ;
 fragment DIGIT          : [0-9]                   ;
+fragment WS             : [ \t\r\n]               ;
 fragment SINGLE_QUOTE   : '\''                    ;
 fragment DOUBLE_QUOTE   : '"'                     ;
 fragment BACKSLASH      : '\\'                    ;
-
-
-/* AGGREGATION OPERATIONS */
-fragment AVG            : 'AVG'      | 'avg'      ;
-fragment COUNT          : 'COUNT'    | 'count'    ;
-fragment COUNT_DISTINCT : 'COUNT_DISTINCT'      
-                        | 'count_distinct'        ;
-fragment FIRST          : 'FIRST'    | 'first'    ;
-fragment LAST           : 'LAST'     | 'last'     ;
-fragment LIST_DISTINCT  : 'LIST_DISTINCT'
-                        | 'list_distinct'         ;
-fragment MAX            : 'MAX'      | 'max'      ;
-fragment MIN            : 'MIN'      | 'min'      ;
-fragment SUM            : 'SUM'      | 'sum'      ;
-
-/* BOOLEAN OPERATIONS OR THEIR PARTS */
-fragment AND            : 'AND'      | 'and'      ;
-fragment CONTAINS       : 'CONTAINS' | 'contains' ;  // not  contains
-
-/**** ENDS WITH ****/
-fragment ENDS           : 'ENDS'     | 'ends'     ;
-fragment WITH           : 'WITH'     | 'with'     ;
-/*******************/
-
-/** IS {NOT} NULL **/
-fragment IS             : 'IS'       | 'is'       ;
-fragment NOT            : 'NOT'      | 'not'      ;
-fragment NULL           : 'NULL'     | 'null'     ;
-/*******************/
-
-fragment LIKE           : 'LIKE'     | 'like'     ;  // not like
-fragment OR             : 'OR'       | 'or'       ;
-
-/*** STARTS WITH ***/
-fragment STARTS         : 'STARTS'   | 'starts'   ;
-// WITH is already in ENDS WITH part
-/*******************/
-
-/** PARTS OF SPECIAL TOKENS **/
-/**** FOR EACH *****/
-fragment FOR            : 'FOR'      | 'for'      ;
-fragment EACH           : 'EACH'     | 'each'     ;
-/*******************/
-
-/**** RANK TOP *****/
-fragment RANK           : 'RANK'     | 'rank'     ;
-fragment TOP            : 'TOP'      | 'top'      ; 
-/*******************/
 /*************************************************/
 /*************************************************/
 
@@ -65,28 +18,27 @@ fragment TOP            : 'TOP'      | 'top'      ;
 /* DECLARATION OF SPECIAL TOKENS (KEYWORDS/FUNCTIONS) */
 ASSUMING  
     : 'ASSUMING' 
-    | 'assuming'   
+    | 'assuming'    
     ;
 FOR_EACH
-    : FOR EACH
+    : ('FOR' | 'for') WS+ ('EACH' | 'each')
     ;
 PREDICT 
-    : 'PREDICT'
+    : 'PREDICT' 
     | 'predict'
     ;
 WHERE
-    : 'WHERE'
+    : 'WHERE' 
     | 'where'
     ;
 CLASSIFY
-    : 'CLASSIFY'
+    : 'CLASSIFY' 
     | 'classify'
     ;
 RANK_TOP
-    : RANK TOP
+    : ('RANK' | 'rank') WS+ ('TOP' | 'top')
     ;
 /******************************************************/
-
 /* AGGREGATION FUNCTIONS */
 AGGR_FUNC   
     : AVG       
@@ -98,6 +50,42 @@ AGGR_FUNC
     | MAX       
     | MIN   
     | SUM
+    ;
+AVG            
+    : 'AVG' 
+    | 'avg' 
+    ;
+COUNT          
+    : 'COUNT' 
+    | 'count'
+    ;
+COUNT_DISTINCT 
+    : 'COUNT_DISTINCT' 
+    | 'count_distinct'
+    ;
+FIRST          
+    : 'FIRST' 
+    | 'first' 
+    ;
+LAST           
+    : 'LAST'     
+    | 'last'     
+    ;
+LIST_DISTINCT  
+    : 'LIST_DISTINCT'
+    | 'list_distinct'
+    ;
+MAX            
+    : 'MAX'      
+    | 'max'      
+    ;
+MIN         
+    : 'MIN'      
+    | 'min'      
+    ;
+SUM            
+    : 'SUM'      
+    | 'sum'      
     ;
 /*************************/    
 
@@ -113,27 +101,62 @@ NUM_COMP_OP
     ;
 
 /* the second argument is a string */
-STR_COMP_OP 
-    : LIKE
-    | NOT LIKE 
-    | CONTAINS 
-    | NOT CONTAINS
-    | ENDS WITH
-    | STARTS WITH
+STR_COMP_OP
+    : NOT_LIKE
+    | NOT_CONTAINS
+    | ENDS_WITH
+    | STARTS_WITH
+    | LIKE
+    | CONTAINS
+    | '='
+    ;
+NOT_LIKE 
+    : ('NOT' | 'not') WS+ ('LIKE' | 'like')
+    ;
+NOT_CONTAINS
+    : ('NOT' | 'not') WS+ ('CONTAINS' | 'contains')
+    ;
+ENDS_WITH
+    : ('ENDS' | 'ends') WS+ ('WITH' | 'with')
+    ;
+STARTS_WITH
+    : ('STARTS' | 'starts') WS+ ('WITH' | 'with')
+    ;
+LIKE
+    : ('LIKE' | 'like')
+    ;
+CONTAINS
+    : ('CONTAINS' | 'contains')
     ;
 
+/* null check operations */
 NULL_CHECK_OP
-    : IS NULL
-    | IS NOT NULL
+    : IS_NOT_NULL
+    | IS_NULL
+    ;
+IS_NOT_NULL
+    : ('IS' | 'is') WS+ ('NOT' | 'not') WS+ ('NULL' | 'null')
+    ;
+IS_NULL
+    : ('IS' | 'is') WS+ ('NULL' | 'null')
     ;
 
+/* logical operations */
 LOGICAL_OP
     : AND
     | OR
-    ;        
-
-NOT_OP
-    : NOT
+    ;
+AND
+    : 'AND'
+    | 'and'
+    ;
+OR
+    : 'OR'
+    | 'or'
+    ;
+NOT 
+    : 'NOT'
+    | 'not'
     ;
 /********************************/ 
 
@@ -144,11 +167,9 @@ FLOAT
     ;
 INT         
     : DIGIT+
-    | '-' DIGIT+                         
-    ;
-NUM         
-    : FLOAT     
-    | INT                     
+    | '-' DIGIT+     
+    | ('-INF' | '-inf')
+    | ('+INF' | '+inf')                    
     ;
 /***********/  
 
@@ -165,6 +186,9 @@ OPEN_PAREN
 CLOSE_PAREN 
     : ')' 
     ;
+STAR
+    : '*'
+    ;
 /*******************/
 
 /* FOR USE IN COMPARISONS */
@@ -179,8 +203,8 @@ ID
     ; 
 
 /* SKIP WHITESPACE */
-WS        
-    : [ \t\r\n]+ -> skip 
+WS_SKIP        
+    : WS+ -> skip 
     ;
 
 /* CATCH ALL TOKENS WHICH ARE NOT YET DEFINED */
