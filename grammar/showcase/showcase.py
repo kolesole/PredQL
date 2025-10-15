@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from antlr4 import *
 from Lexer_PQL import Lexer_PQL
 from Parser_PQL import Parser_PQL
-from Parser_PQLVisitor import Parser_PQLVisitor
+from PQLVisitor import PQLVisitor
 
 def print_tree(node, parser, indent=0):
    
@@ -30,6 +30,8 @@ def parse_query(query: str):
 
     print("=== Parse Tree ===")
     print_tree(tree, parser)
+    visitor = PQLVisitor()
+    print(visitor.visit(tree))
     print("==================")
 
     return tree

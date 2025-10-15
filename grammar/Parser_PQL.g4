@@ -19,8 +19,8 @@ for_each
 
 predict
     : PREDICT aggregation (RANK_TOP INT | CLASSIFY)?
-    | PREDICT ID DOT ID (RANK_TOP INT | CLASSIFY)?
     | PREDICT condition (RANK_TOP INT | CLASSIFY)?
+    | PREDICT ID DOT ID (RANK_TOP INT | CLASSIFY)?
     ;
     
 where

@@ -1,0 +1,219 @@
+from Parser_PQL import Parser_PQL
+from Parser_PQLVisitor import Parser_PQLVisitor
+
+class PQLVisitor(Parser_PQLVisitor):
+    # Visit a parse tree produced by Parser_PQL#query.
+    def visitQuery(self, ctx:Parser_PQL.QueryContext):
+        query_dict = None
+        if ctx.assuming():
+            query_dict = self.visit(ctx.assuming())
+        elif ctx.for_each():
+            query_dict = self.visit(ctx.for_each())
+        elif ctx.predict():
+            query_dict = self.visit(ctx.predict())
+        elif ctx.where():
+            query_dict = self.visit(ctx.where())
+        else:
+            pass
+
+        return query_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#assuming.
+    def visitAssuming(self, ctx:Parser_PQL.AssumingContext):
+        qtype = "assuming"
+        conditions = [self.visit(cond) for cond in ctx.condition()]
+        logical_ops = [op.getText() for op in ctx.LOGICAL_OP()]
+        
+        assuming_dict = {"QType"      : qtype,
+                         "Conditions" : conditions,
+                         "LogicalOps" : logical_ops
+                        }
+        return assuming_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#for_each.
+    def visitFor_each(self, ctx:Parser_PQL.For_eachContext):
+        qtype = "for_each"
+        table = ctx.ID(0).getText()
+        column = ctx.ID(1).getText()   # ask the supervisor if here can be "*"
+        where = self.visit(ctx.where()) if ctx.where() else None
+        
+        for_each_dict = {"QType" : qtype,
+                         "Table" : table,
+                         "Column": column,
+                         "Where" : where
+                        }
+        return for_each_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#predict.
+    def visitPredict(self, ctx:Parser_PQL.PredictContext):
+        qtype = "predict"
+        pred_type = None
+        aggregation = None
+        condition = None
+        table = None
+        column = None
+
+        if ctx.aggregation():
+            pred_type = "aggregation"
+            aggregation = self.visit(ctx.aggregation())
+        elif ctx.condition():
+            pred_type = "condition"
+            condition = self.visit(ctx.condition())
+        else:
+            pred_type = "id_dot_id"
+            table = ctx.ID(0).getText()
+            column = ctx.ID(1).getText()     # ask the supervisor if here can be "*"
+
+        rank_top = True if ctx.RANK_TOP() else False 
+        K = ctx.INT().getText() if rank_top else None         # ask the supervisot if here can be both
+        classify = True if ctx.CLASSIFY else False
+
+        predict_dict = {"QType"       : qtype,
+                        "PredType"    : pred_type,
+                        "Aggregation" : aggregation,
+                        "Condition"   : condition,
+                        "Table"       : table,
+                        "Column"      : column,
+                        "RankTop"     : rank_top,
+                        "K"           : K,
+                        "Classify"    : classify 
+                       }
+        return predict_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#where.
+    def visitWhere(self, ctx:Parser_PQL.WhereContext):
+        qtype = "where"
+        conditions = [self.visit(cond) for cond in ctx.condition()]
+        logical_ops = [op.getText() for op in ctx.LOGICAL_OP()]
+
+        where_dict = {"QType"      : qtype,
+                      "Conditions" : conditions,
+                      "LogicalOps" : logical_ops
+                     }
+        return where_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#condition.
+    def visitCondition(self, ctx:Parser_PQL.ConditionContext):
+        cond_dict = None
+        if ctx.num_condition():
+            cond_dict = self.visit(ctx.num_condition())
+        elif ctx.str_condition():
+            cond_dict = self.visit(ctx.str_condition())
+        elif ctx.null_check_condition():
+            cond_dict = self.visit(ctx.null_check_condition())
+        else:
+            pass
+
+        return cond_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#num_condition.
+    def visitNum_condition(self, ctx:Parser_PQL.Num_conditionContext):
+        ctype = "num"
+        cond_type = None
+        aggregation = None
+        table = None
+        column = None
+
+        if ctx.aggregation():
+            cond_type = "aggregation"
+            aggregation = self.visit(ctx.aggregation()) 
+        else:
+            cond_type = "id_dot_id"
+            table = ctx.ID(0).getText()
+            column = "*" if ctx.STAR() else ctx.ID(1).getText()
+        
+        comp_op = ctx.NUM_COMP_OP().getText()
+        N = ctx.INT().getText() if ctx.INT() else ctx.FLOAT().getText()
+
+        num_cond_dict = {"CType"       : ctype,
+                         "CondType"    : cond_type,
+                         "Aggregation" : aggregation,
+                         "Table"       : table,
+                         "Column"      : column,
+                         "CompOp"      : comp_op,
+                         "N"           : N
+                        }
+        return num_cond_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#str_condition.
+    def visitStr_condition(self, ctx:Parser_PQL.Str_conditionContext):
+        ctype = "str"
+        cond_type = None
+        aggregation = None
+        table = None
+        column = None
+
+        if ctx.aggregation():
+            cond_type = "aggregation"
+            aggregation = self.visit(ctx.aggregation()) 
+        else:
+            cond_type = "id_dot_id"
+            table = ctx.ID(0).getText()
+            column = "*" if ctx.STAR() else ctx.ID(1).getText()
+        
+        comp_op = ctx.STR_COMP_OP().getText()
+        string = ctx.STRING().getText() 
+
+        string_cond_dict = {"CType"       : ctype,
+                            "CondType"    : cond_type,
+                            "Aggregation" : aggregation,
+                            "Table"       : table,
+                            "Column"      : column,
+                            "CompOp"      : comp_op,
+                            "String"      : string
+                           }
+        return string_cond_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#null_check_condition.
+    def visitNull_check_condition(self, ctx:Parser_PQL.Null_check_conditionContext):
+        ctype = "null"
+        cond_type = None
+        aggregation = None
+        table = None
+        column = None
+
+        if ctx.aggregation():
+            cond_type = "aggregation"
+            aggregation = self.visit(ctx.aggregation()) 
+        else:
+            cond_type = "id_dot_id"
+            table = ctx.ID(0).getText()
+            column = "*" if ctx.STAR() else ctx.ID(1).getText()
+        
+        check_op = ctx.NULL_CHECK_OP(0).getText()
+
+        null_cond_dict = {"CType"       : ctype,
+                         "CondType"    : cond_type,
+                         "Aggregation" : aggregation,
+                         "Table"       : table,
+                         "Column"      : column,
+                         "CheckOp"     : check_op,
+                         }
+        return null_cond_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#aggregation.
+    def visitAggregation(self, ctx:Parser_PQL.AggregationContext):
+        aggr_type = ctx.AGGR_FUNC().getText()
+        table = ctx.ID(0).getText()
+        column = "*" if ctx.STAR() else ctx.ID(1).getText()
+        where = self.visit(ctx.where()) if ctx.where() else None
+        start = ctx.INT(0).getText() if ctx.INT() else None
+        end = ctx.INT(1).getText() if ctx.INT() else None
+        
+        aggr_dict = {"AggrType" : aggr_type,
+                     "Table"   : table,
+                     "Column"  : column,
+                     "Where"   : where,
+                     "Start"   : start,
+                     "End"     : end
+                    }
+        return aggr_dict
