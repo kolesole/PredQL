@@ -38,10 +38,13 @@ def parse_query(query: str):
 
 if __name__ == "__main__":
     with open('showcase.txt', "r") as f:
+        query = ""
         for l in f:
-            query = l.strip()
-            print(query)
-            parse_query(query)
+            query += l
+            if ';' in l:
+                print(query)
+                parse_query(query)
+                query = ""
     # while 1:
     #     # query = input("Enter PQL-query: ")
     #     parse_query(query)

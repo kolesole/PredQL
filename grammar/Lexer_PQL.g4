@@ -189,6 +189,10 @@ CLOSE_PAREN
 STAR
     : '*'
     ;
+SEMI_COLUMN
+    : ';'
+    ;
+
 /*******************/
 
 /* FOR USE IN COMPARISONS */

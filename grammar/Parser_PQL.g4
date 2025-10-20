@@ -3,14 +3,18 @@ parser grammar Parser_PQL ;
 options { tokenVocab=Lexer_PQL; }    // import tokens from the lexer grammar
 
 query
-    : assuming
-    | for_each
-    | predict
-    | where
+    : help_query+ SEMI_COLUMN
     ;
 
+help_query
+    : assuming 
+    | for_each 
+    | predict 
+    | where 
+    ;
+    
 assuming    
-    : ASSUMING condition (LOGICAL_OP condition)*
+    : ASSUMING condition (LOGICAL_OP condition)* 
     ;
 
 for_each
@@ -18,13 +22,13 @@ for_each
     ;
 
 predict
-    : PREDICT aggregation (RANK_TOP INT | CLASSIFY)?
+    : PREDICT aggregation (RANK_TOP INT | CLASSIFY)? 
     | PREDICT condition (RANK_TOP INT | CLASSIFY)?
-    | PREDICT ID DOT ID (RANK_TOP INT | CLASSIFY)?
+    | PREDICT ID DOT (ID | STAR) (RANK_TOP INT | CLASSIFY)? 
     ;
     
 where
-    : WHERE condition (LOGICAL_OP condition)*
+    : WHERE condition (LOGICAL_OP condition)* 
     ;
 
 condition

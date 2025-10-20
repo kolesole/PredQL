@@ -1,9 +1,18 @@
 from Parser_PQL import Parser_PQL
 from Parser_PQLVisitor import Parser_PQLVisitor
 
+# dag_db  sql_alchime
+
 class PQLVisitor(Parser_PQLVisitor):
     # Visit a parse tree produced by Parser_PQL#query.
     def visitQuery(self, ctx:Parser_PQL.QueryContext):
+        query_parts = [self.visit(query) for query in ctx.help_query()]
+
+        query_dict = {"Qparts" : query_parts}
+        return query_dict
+    
+    # Visit a parse tree produced by Parser_PQL#help_query.
+    def visitHelp_query(self, ctx:Parser_PQL.QueryContext):
         query_dict = None
         if ctx.assuming():
             query_dict = self.visit(ctx.assuming())
@@ -36,7 +45,7 @@ class PQLVisitor(Parser_PQLVisitor):
     def visitFor_each(self, ctx:Parser_PQL.For_eachContext):
         qtype = "for_each"
         table = ctx.ID(0).getText()
-        column = ctx.ID(1).getText()   # ask the supervisor if here can be "*"
+        column = ctx.ID(1).getText()   
         where = self.visit(ctx.where()) if ctx.where() else None
         
         for_each_dict = {"QType" : qtype,
@@ -65,11 +74,11 @@ class PQLVisitor(Parser_PQLVisitor):
         else:
             pred_type = "id_dot_id"
             table = ctx.ID(0).getText()
-            column = ctx.ID(1).getText()     # ask the supervisor if here can be "*"
+            column = "*" if ctx.STAR() else ctx.ID(1).getText()     
 
         rank_top = True if ctx.RANK_TOP() else False 
-        K = ctx.INT().getText() if rank_top else None         # ask the supervisot if here can be both
-        classify = True if ctx.CLASSIFY else False
+        K = ctx.INT().getText() if rank_top else None        
+        classify = True if ctx.CLASSIFY() else False
 
         predict_dict = {"QType"       : qtype,
                         "PredType"    : pred_type,
