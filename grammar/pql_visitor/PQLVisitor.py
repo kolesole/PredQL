@@ -1,7 +1,11 @@
-from Parser_PQL import Parser_PQL
-from Parser_PQLVisitor import Parser_PQLVisitor
+import sys
+import os
 
-# dag_db  sql_alchime
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, BASE_DIR)
+
+from antlr4_parser.Parser_PQL import Parser_PQL
+from antlr4_parser.Parser_PQLVisitor import Parser_PQLVisitor
 
 class PQLVisitor(Parser_PQLVisitor):
     # Visit a parse tree produced by Parser_PQL#query.
