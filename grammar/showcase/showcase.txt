@@ -18,7 +18,7 @@ PREDICT COUNT(transaction.* WHERE transaction.amount > 100);
 FOR EACH user.user_id WHERE user.country = 'US';
 FOR EACH user.user_id WHERE COUNT(views.id, -30, 0) > 0;
 FOR EACH user.user_id WHERE LIST_DISTINCT(purchases.item_category, -90, 0) CONTAINS 'Food';
-FOR EACH user.user_id WHERE LAST(status.status, -1, 0) = 'ACTIVE'
+FOR EACH user.user_id WHERE LAST(status.status, -1, 0) NOT LIKE 'ACTIVE'
 FOR EACH user.user_id WHERE COUNT(transactions.*, -INF, 0) > 0;
 PREDICT COUNT(transaction.* WHERE transaction.value > 10, 0, 7)
 FOR EACH user.user_id WHERE COUNT(transaction.*, -7, 0) > 0;

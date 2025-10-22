@@ -10,7 +10,7 @@ help_query
     : assuming 
     | for_each 
     | predict 
-    | where 
+    | where
     ;
     
 assuming    
@@ -39,7 +39,7 @@ condition
 
 num_condition
     : aggregation NUM_COMP_OP (FLOAT | INT)
-    | ID DOT (ID | STAR) NUM_COMP_OP (FLOAT | INT)
+    | ID DOT (ID | STAR) NUM_COMP_OP (DATETIME | FLOAT | INT)
     ;
 
 str_condition
@@ -53,9 +53,5 @@ null_check_condition
     ;
 
 aggregation 
-    : AGGR_FUNC OPEN_PAREN ID DOT (ID | STAR) (where)? (COMMA INT COMMA INT)? CLOSE_PAREN 
+    : AGGR_FUNC OPEN_PAREN ID DOT (ID | STAR) (where)? (COMMA INT COMMA INT (COMMA TIME_MEASURE_UNIT)?)? CLOSE_PAREN
     ;
-
-
-
-

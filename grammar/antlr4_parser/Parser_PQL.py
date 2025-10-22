@@ -10,7 +10,7 @@ else:
 
 def serializedATN():
     return [
-        4,1,43,138,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,45,142,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,1,0,4,0,24,8,0,11,0,12,0,25,
         1,0,1,0,1,1,1,1,1,1,1,1,3,1,34,8,1,1,2,1,2,1,2,1,2,5,2,40,8,2,10,
         2,12,2,43,9,2,1,3,1,3,1,3,1,3,1,3,3,3,50,8,3,1,4,1,4,1,4,1,4,1,4,
@@ -19,43 +19,45 @@ def serializedATN():
         84,9,5,1,6,1,6,1,6,3,6,89,8,6,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,
         7,3,7,100,8,7,1,8,1,8,1,8,1,8,1,8,1,8,1,8,1,8,1,8,3,8,111,8,8,1,
         9,1,9,1,9,1,9,1,9,1,9,1,9,3,9,120,8,9,1,10,1,10,1,10,1,10,1,10,1,
-        10,3,10,128,8,10,1,10,1,10,1,10,1,10,3,10,134,8,10,1,10,1,10,1,10,
-        0,0,11,0,2,4,6,8,10,12,14,16,18,20,0,2,2,0,38,38,41,41,1,0,32,33,
-        148,0,23,1,0,0,0,2,33,1,0,0,0,4,35,1,0,0,0,6,44,1,0,0,0,8,74,1,0,
-        0,0,10,76,1,0,0,0,12,88,1,0,0,0,14,99,1,0,0,0,16,110,1,0,0,0,18,
-        119,1,0,0,0,20,121,1,0,0,0,22,24,3,2,1,0,23,22,1,0,0,0,24,25,1,0,
-        0,0,25,23,1,0,0,0,25,26,1,0,0,0,26,27,1,0,0,0,27,28,5,39,0,0,28,
-        1,1,0,0,0,29,34,3,4,2,0,30,34,3,6,3,0,31,34,3,8,4,0,32,34,3,10,5,
-        0,33,29,1,0,0,0,33,30,1,0,0,0,33,31,1,0,0,0,33,32,1,0,0,0,34,3,1,
-        0,0,0,35,36,5,1,0,0,36,41,3,12,6,0,37,38,5,28,0,0,38,40,3,12,6,0,
-        39,37,1,0,0,0,40,43,1,0,0,0,41,39,1,0,0,0,41,42,1,0,0,0,42,5,1,0,
-        0,0,43,41,1,0,0,0,44,45,5,2,0,0,45,46,5,41,0,0,46,47,5,34,0,0,47,
-        49,5,41,0,0,48,50,3,10,5,0,49,48,1,0,0,0,49,50,1,0,0,0,50,7,1,0,
-        0,0,51,52,5,3,0,0,52,56,3,20,10,0,53,54,5,6,0,0,54,57,5,33,0,0,55,
-        57,5,5,0,0,56,53,1,0,0,0,56,55,1,0,0,0,56,57,1,0,0,0,57,75,1,0,0,
-        0,58,59,5,3,0,0,59,63,3,12,6,0,60,61,5,6,0,0,61,64,5,33,0,0,62,64,
-        5,5,0,0,63,60,1,0,0,0,63,62,1,0,0,0,63,64,1,0,0,0,64,75,1,0,0,0,
-        65,66,5,3,0,0,66,67,5,41,0,0,67,68,5,34,0,0,68,72,7,0,0,0,69,70,
-        5,6,0,0,70,73,5,33,0,0,71,73,5,5,0,0,72,69,1,0,0,0,72,71,1,0,0,0,
-        72,73,1,0,0,0,73,75,1,0,0,0,74,51,1,0,0,0,74,58,1,0,0,0,74,65,1,
-        0,0,0,75,9,1,0,0,0,76,77,5,4,0,0,77,82,3,12,6,0,78,79,5,28,0,0,79,
-        81,3,12,6,0,80,78,1,0,0,0,81,84,1,0,0,0,82,80,1,0,0,0,82,83,1,0,
-        0,0,83,11,1,0,0,0,84,82,1,0,0,0,85,89,3,14,7,0,86,89,3,16,8,0,87,
-        89,3,18,9,0,88,85,1,0,0,0,88,86,1,0,0,0,88,87,1,0,0,0,89,13,1,0,
-        0,0,90,91,3,20,10,0,91,92,5,17,0,0,92,93,7,1,0,0,93,100,1,0,0,0,
-        94,95,5,41,0,0,95,96,5,34,0,0,96,97,7,0,0,0,97,98,5,17,0,0,98,100,
-        7,1,0,0,99,90,1,0,0,0,99,94,1,0,0,0,100,15,1,0,0,0,101,102,3,20,
-        10,0,102,103,5,18,0,0,103,104,5,40,0,0,104,111,1,0,0,0,105,106,5,
-        41,0,0,106,107,5,34,0,0,107,108,7,0,0,0,108,109,5,18,0,0,109,111,
-        5,40,0,0,110,101,1,0,0,0,110,105,1,0,0,0,111,17,1,0,0,0,112,113,
-        3,20,10,0,113,114,5,25,0,0,114,120,1,0,0,0,115,116,5,41,0,0,116,
-        117,5,34,0,0,117,118,7,0,0,0,118,120,5,25,0,0,119,112,1,0,0,0,119,
-        115,1,0,0,0,120,19,1,0,0,0,121,122,5,7,0,0,122,123,5,36,0,0,123,
-        124,5,41,0,0,124,125,5,34,0,0,125,127,7,0,0,0,126,128,3,10,5,0,127,
-        126,1,0,0,0,127,128,1,0,0,0,128,133,1,0,0,0,129,130,5,35,0,0,130,
-        131,5,33,0,0,131,132,5,35,0,0,132,134,5,33,0,0,133,129,1,0,0,0,133,
-        134,1,0,0,0,134,135,1,0,0,0,135,136,5,37,0,0,136,21,1,0,0,0,15,25,
-        33,41,49,56,63,72,74,82,88,99,110,119,127,133
+        10,3,10,128,8,10,1,10,1,10,1,10,1,10,1,10,1,10,3,10,136,8,10,3,10,
+        138,8,10,1,10,1,10,1,10,0,0,11,0,2,4,6,8,10,12,14,16,18,20,0,3,2,
+        0,39,39,43,43,1,0,33,34,1,0,32,34,153,0,23,1,0,0,0,2,33,1,0,0,0,
+        4,35,1,0,0,0,6,44,1,0,0,0,8,74,1,0,0,0,10,76,1,0,0,0,12,88,1,0,0,
+        0,14,99,1,0,0,0,16,110,1,0,0,0,18,119,1,0,0,0,20,121,1,0,0,0,22,
+        24,3,2,1,0,23,22,1,0,0,0,24,25,1,0,0,0,25,23,1,0,0,0,25,26,1,0,0,
+        0,26,27,1,0,0,0,27,28,5,40,0,0,28,1,1,0,0,0,29,34,3,4,2,0,30,34,
+        3,6,3,0,31,34,3,8,4,0,32,34,3,10,5,0,33,29,1,0,0,0,33,30,1,0,0,0,
+        33,31,1,0,0,0,33,32,1,0,0,0,34,3,1,0,0,0,35,36,5,1,0,0,36,41,3,12,
+        6,0,37,38,5,28,0,0,38,40,3,12,6,0,39,37,1,0,0,0,40,43,1,0,0,0,41,
+        39,1,0,0,0,41,42,1,0,0,0,42,5,1,0,0,0,43,41,1,0,0,0,44,45,5,2,0,
+        0,45,46,5,43,0,0,46,47,5,35,0,0,47,49,5,43,0,0,48,50,3,10,5,0,49,
+        48,1,0,0,0,49,50,1,0,0,0,50,7,1,0,0,0,51,52,5,3,0,0,52,56,3,20,10,
+        0,53,54,5,6,0,0,54,57,5,34,0,0,55,57,5,5,0,0,56,53,1,0,0,0,56,55,
+        1,0,0,0,56,57,1,0,0,0,57,75,1,0,0,0,58,59,5,3,0,0,59,63,3,12,6,0,
+        60,61,5,6,0,0,61,64,5,34,0,0,62,64,5,5,0,0,63,60,1,0,0,0,63,62,1,
+        0,0,0,63,64,1,0,0,0,64,75,1,0,0,0,65,66,5,3,0,0,66,67,5,43,0,0,67,
+        68,5,35,0,0,68,72,7,0,0,0,69,70,5,6,0,0,70,73,5,34,0,0,71,73,5,5,
+        0,0,72,69,1,0,0,0,72,71,1,0,0,0,72,73,1,0,0,0,73,75,1,0,0,0,74,51,
+        1,0,0,0,74,58,1,0,0,0,74,65,1,0,0,0,75,9,1,0,0,0,76,77,5,4,0,0,77,
+        82,3,12,6,0,78,79,5,28,0,0,79,81,3,12,6,0,80,78,1,0,0,0,81,84,1,
+        0,0,0,82,80,1,0,0,0,82,83,1,0,0,0,83,11,1,0,0,0,84,82,1,0,0,0,85,
+        89,3,14,7,0,86,89,3,16,8,0,87,89,3,18,9,0,88,85,1,0,0,0,88,86,1,
+        0,0,0,88,87,1,0,0,0,89,13,1,0,0,0,90,91,3,20,10,0,91,92,5,17,0,0,
+        92,93,7,1,0,0,93,100,1,0,0,0,94,95,5,43,0,0,95,96,5,35,0,0,96,97,
+        7,0,0,0,97,98,5,17,0,0,98,100,7,2,0,0,99,90,1,0,0,0,99,94,1,0,0,
+        0,100,15,1,0,0,0,101,102,3,20,10,0,102,103,5,18,0,0,103,104,5,42,
+        0,0,104,111,1,0,0,0,105,106,5,43,0,0,106,107,5,35,0,0,107,108,7,
+        0,0,0,108,109,5,18,0,0,109,111,5,42,0,0,110,101,1,0,0,0,110,105,
+        1,0,0,0,111,17,1,0,0,0,112,113,3,20,10,0,113,114,5,25,0,0,114,120,
+        1,0,0,0,115,116,5,43,0,0,116,117,5,35,0,0,117,118,7,0,0,0,118,120,
+        5,25,0,0,119,112,1,0,0,0,119,115,1,0,0,0,120,19,1,0,0,0,121,122,
+        5,7,0,0,122,123,5,37,0,0,123,124,5,43,0,0,124,125,5,35,0,0,125,127,
+        7,0,0,0,126,128,3,10,5,0,127,126,1,0,0,0,127,128,1,0,0,0,128,137,
+        1,0,0,0,129,130,5,36,0,0,130,131,5,34,0,0,131,132,5,36,0,0,132,135,
+        5,34,0,0,133,134,5,36,0,0,134,136,5,41,0,0,135,133,1,0,0,0,135,136,
+        1,0,0,0,136,138,1,0,0,0,137,129,1,0,0,0,137,138,1,0,0,0,138,139,
+        1,0,0,0,139,140,5,38,0,0,140,21,1,0,0,0,16,25,33,41,49,56,63,72,
+        74,82,88,99,110,119,127,135,137
     ]
 
 class Parser_PQL ( Parser ):
@@ -76,8 +78,8 @@ class Parser_PQL ( Parser ):
                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                     "<INVALID>", "<INVALID>", "'.'", "','", "'('", "')'", 
-                     "'*'", "';'" ]
+                     "<INVALID>", "<INVALID>", "<INVALID>", "'.'", "','", 
+                     "'('", "')'", "'*'", "';'" ]
 
     symbolicNames = [ "<INVALID>", "ASSUMING", "FOR_EACH", "PREDICT", "WHERE", 
                       "CLASSIFY", "RANK_TOP", "AGGR_FUNC", "AVG", "COUNT", 
@@ -85,10 +87,10 @@ class Parser_PQL ( Parser ):
                       "MAX", "MIN", "SUM", "NUM_COMP_OP", "STR_COMP_OP", 
                       "NOT_LIKE", "NOT_CONTAINS", "ENDS_WITH", "STARTS_WITH", 
                       "LIKE", "CONTAINS", "NULL_CHECK_OP", "IS_NOT_NULL", 
-                      "IS_NULL", "LOGICAL_OP", "AND", "OR", "NOT", "FLOAT", 
-                      "INT", "DOT", "COMMA", "OPEN_PAREN", "CLOSE_PAREN", 
-                      "STAR", "SEMI_COLUMN", "STRING", "ID", "WS_SKIP", 
-                      "ANY" ]
+                      "IS_NULL", "LOGICAL_OP", "AND", "OR", "NOT", "DATETIME", 
+                      "FLOAT", "INT", "DOT", "COMMA", "OPEN_PAREN", "CLOSE_PAREN", 
+                      "STAR", "SEMI_COLUMN", "TIME_MEASURE_UNIT", "STRING", 
+                      "ID", "WS_SKIP", "ANY" ]
 
     RULE_query = 0
     RULE_help_query = 1
@@ -138,18 +140,20 @@ class Parser_PQL ( Parser ):
     AND=29
     OR=30
     NOT=31
-    FLOAT=32
-    INT=33
-    DOT=34
-    COMMA=35
-    OPEN_PAREN=36
-    CLOSE_PAREN=37
-    STAR=38
-    SEMI_COLUMN=39
-    STRING=40
-    ID=41
-    WS_SKIP=42
-    ANY=43
+    DATETIME=32
+    FLOAT=33
+    INT=34
+    DOT=35
+    COMMA=36
+    OPEN_PAREN=37
+    CLOSE_PAREN=38
+    STAR=39
+    SEMI_COLUMN=40
+    TIME_MEASURE_UNIT=41
+    STRING=42
+    ID=43
+    WS_SKIP=44
+    ANY=45
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -546,7 +550,7 @@ class Parser_PQL ( Parser ):
                     self.state = 55
                     self.match(Parser_PQL.CLASSIFY)
                     pass
-                elif token in [1, 2, 3, 4, 39]:
+                elif token in [1, 2, 3, 4, 40]:
                     pass
                 else:
                     pass
@@ -571,7 +575,7 @@ class Parser_PQL ( Parser ):
                     self.state = 62
                     self.match(Parser_PQL.CLASSIFY)
                     pass
-                elif token in [1, 2, 3, 4, 39]:
+                elif token in [1, 2, 3, 4, 40]:
                     pass
                 else:
                     pass
@@ -587,7 +591,7 @@ class Parser_PQL ( Parser ):
                 self.match(Parser_PQL.DOT)
                 self.state = 68
                 _la = self._input.LA(1)
-                if not(_la==38 or _la==41):
+                if not(_la==39 or _la==43):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -605,7 +609,7 @@ class Parser_PQL ( Parser ):
                     self.state = 71
                     self.match(Parser_PQL.CLASSIFY)
                     pass
-                elif token in [1, 2, 3, 4, 39]:
+                elif token in [1, 2, 3, 4, 40]:
                     pass
                 else:
                     pass
@@ -803,6 +807,9 @@ class Parser_PQL ( Parser ):
         def STAR(self):
             return self.getToken(Parser_PQL.STAR, 0)
 
+        def DATETIME(self):
+            return self.getToken(Parser_PQL.DATETIME, 0)
+
         def getRuleIndex(self):
             return Parser_PQL.RULE_num_condition
 
@@ -840,13 +847,13 @@ class Parser_PQL ( Parser ):
                 self.match(Parser_PQL.NUM_COMP_OP)
                 self.state = 92
                 _la = self._input.LA(1)
-                if not(_la==32 or _la==33):
+                if not(_la==33 or _la==34):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
                     self.consume()
                 pass
-            elif token in [41]:
+            elif token in [43]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 94
                 self.match(Parser_PQL.ID)
@@ -854,7 +861,7 @@ class Parser_PQL ( Parser ):
                 self.match(Parser_PQL.DOT)
                 self.state = 96
                 _la = self._input.LA(1)
-                if not(_la==38 or _la==41):
+                if not(_la==39 or _la==43):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -863,7 +870,7 @@ class Parser_PQL ( Parser ):
                 self.match(Parser_PQL.NUM_COMP_OP)
                 self.state = 98
                 _la = self._input.LA(1)
-                if not(_la==32 or _la==33):
+                if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 30064771072) != 0)):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -948,7 +955,7 @@ class Parser_PQL ( Parser ):
                 self.state = 103
                 self.match(Parser_PQL.STRING)
                 pass
-            elif token in [41]:
+            elif token in [43]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 105
                 self.match(Parser_PQL.ID)
@@ -956,7 +963,7 @@ class Parser_PQL ( Parser ):
                 self.match(Parser_PQL.DOT)
                 self.state = 107
                 _la = self._input.LA(1)
-                if not(_la==38 or _la==41):
+                if not(_la==39 or _la==43):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -1040,7 +1047,7 @@ class Parser_PQL ( Parser ):
                 self.state = 113
                 self.match(Parser_PQL.NULL_CHECK_OP)
                 pass
-            elif token in [41]:
+            elif token in [43]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 115
                 self.match(Parser_PQL.ID)
@@ -1048,7 +1055,7 @@ class Parser_PQL ( Parser ):
                 self.match(Parser_PQL.DOT)
                 self.state = 117
                 _la = self._input.LA(1)
-                if not(_la==38 or _la==41):
+                if not(_la==39 or _la==43):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -1112,6 +1119,9 @@ class Parser_PQL ( Parser ):
             else:
                 return self.getToken(Parser_PQL.INT, i)
 
+        def TIME_MEASURE_UNIT(self):
+            return self.getToken(Parser_PQL.TIME_MEASURE_UNIT, 0)
+
         def getRuleIndex(self):
             return Parser_PQL.RULE_aggregation
 
@@ -1149,7 +1159,7 @@ class Parser_PQL ( Parser ):
             self.match(Parser_PQL.DOT)
             self.state = 125
             _la = self._input.LA(1)
-            if not(_la==38 or _la==41):
+            if not(_la==39 or _la==43):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -1162,10 +1172,10 @@ class Parser_PQL ( Parser ):
                 self.where()
 
 
-            self.state = 133
+            self.state = 137
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==35:
+            if _la==36:
                 self.state = 129
                 self.match(Parser_PQL.COMMA)
                 self.state = 130
@@ -1174,9 +1184,19 @@ class Parser_PQL ( Parser ):
                 self.match(Parser_PQL.COMMA)
                 self.state = 132
                 self.match(Parser_PQL.INT)
+                self.state = 135
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                if _la==36:
+                    self.state = 133
+                    self.match(Parser_PQL.COMMA)
+                    self.state = 134
+                    self.match(Parser_PQL.TIME_MEASURE_UNIT)
 
 
-            self.state = 135
+
+
+            self.state = 139
             self.match(Parser_PQL.CLOSE_PAREN)
         except RecognitionException as re:
             localctx.exception = re

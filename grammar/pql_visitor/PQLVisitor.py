@@ -113,6 +113,19 @@ class PQLVisitor(Parser_PQLVisitor):
     # Visit a parse tree produced by Parser_PQL#condition.
     def visitCondition(self, ctx:Parser_PQL.ConditionContext):
         cond_dict = None
+        cond_type = None
+        aggregation = None
+        table = None
+        column = None
+
+        if ctx.aggregation():
+            cond_type = "aggregation"
+            aggregation = self.visit(ctx.aggregation()) 
+        else:
+            cond_type = "id_dot_id"
+            table = ctx.ID(0).getText()
+            column = "*" if ctx.STAR() else ctx.ID(1).getText()
+
         if ctx.num_condition():
             cond_dict = self.visit(ctx.num_condition())
         elif ctx.str_condition():
@@ -122,35 +135,30 @@ class PQLVisitor(Parser_PQLVisitor):
         else:
             pass
 
+        cond_dict["CondType"] = cond_type
+        cond_dict["Aggregation"] = aggregation
+        cond_dict["Table"] = table
+        cond_dict["Column"] = column
+
         return cond_dict
 
 
     # Visit a parse tree produced by Parser_PQL#num_condition.
     def visitNum_condition(self, ctx:Parser_PQL.Num_conditionContext):
         ctype = "num"
-        cond_type = None
-        aggregation = None
-        table = None
-        column = None
-
-        if ctx.aggregation():
-            cond_type = "aggregation"
-            aggregation = self.visit(ctx.aggregation()) 
-        else:
-            cond_type = "id_dot_id"
-            table = ctx.ID(0).getText()
-            column = "*" if ctx.STAR() else ctx.ID(1).getText()
-        
         comp_op = ctx.NUM_COMP_OP().getText()
-        N = ctx.INT().getText() if ctx.INT() else ctx.FLOAT().getText()
 
-        num_cond_dict = {"CType"       : ctype,
-                         "CondType"    : cond_type,
-                         "Aggregation" : aggregation,
-                         "Table"       : table,
-                         "Column"      : column,
-                         "CompOp"      : comp_op,
-                         "N"           : N
+        N = None
+        if ctx.DATETIME():
+            N = ctx.DATETIME().getText()
+        elif ctx.FLOAT():
+            N = ctx.FLOAT().getText()
+        elif ctx.INT():
+            N = ctx.INT().getText()
+
+        num_cond_dict = {"CType"  : ctype,
+                         "CompOp" : comp_op,
+                         "N"      : N
                         }
         return num_cond_dict
 
@@ -158,29 +166,12 @@ class PQLVisitor(Parser_PQLVisitor):
     # Visit a parse tree produced by Parser_PQL#str_condition.
     def visitStr_condition(self, ctx:Parser_PQL.Str_conditionContext):
         ctype = "str"
-        cond_type = None
-        aggregation = None
-        table = None
-        column = None
-
-        if ctx.aggregation():
-            cond_type = "aggregation"
-            aggregation = self.visit(ctx.aggregation()) 
-        else:
-            cond_type = "id_dot_id"
-            table = ctx.ID(0).getText()
-            column = "*" if ctx.STAR() else ctx.ID(1).getText()
-        
         comp_op = ctx.STR_COMP_OP().getText()
         string = ctx.STRING().getText() 
 
-        string_cond_dict = {"CType"       : ctype,
-                            "CondType"    : cond_type,
-                            "Aggregation" : aggregation,
-                            "Table"       : table,
-                            "Column"      : column,
-                            "CompOp"      : comp_op,
-                            "String"      : string
+        string_cond_dict = {"CType"  : ctype,
+                            "CompOp" : comp_op,
+                            "String" : string
                            }
         return string_cond_dict
 
@@ -188,27 +179,10 @@ class PQLVisitor(Parser_PQLVisitor):
     # Visit a parse tree produced by Parser_PQL#null_check_condition.
     def visitNull_check_condition(self, ctx:Parser_PQL.Null_check_conditionContext):
         ctype = "null"
-        cond_type = None
-        aggregation = None
-        table = None
-        column = None
-
-        if ctx.aggregation():
-            cond_type = "aggregation"
-            aggregation = self.visit(ctx.aggregation()) 
-        else:
-            cond_type = "id_dot_id"
-            table = ctx.ID(0).getText()
-            column = "*" if ctx.STAR() else ctx.ID(1).getText()
-        
         check_op = ctx.NULL_CHECK_OP(0).getText()
 
-        null_cond_dict = {"CType"       : ctype,
-                         "CondType"    : cond_type,
-                         "Aggregation" : aggregation,
-                         "Table"       : table,
-                         "Column"      : column,
-                         "CheckOp"     : check_op,
+        null_cond_dict = {"CType"   : ctype,
+                          "CheckOp" : check_op
                          }
         return null_cond_dict
 
@@ -221,12 +195,14 @@ class PQLVisitor(Parser_PQLVisitor):
         where = self.visit(ctx.where()) if ctx.where() else None
         start = ctx.INT(0).getText() if ctx.INT() else None
         end = ctx.INT(1).getText() if ctx.INT() else None
+        measure_unit = ctx.TIME_MEASURE_UNIT().getText() if ctx.TIME_MEASURE_UNIT() else None
         
-        aggr_dict = {"AggrType" : aggr_type,
-                     "Table"   : table,
-                     "Column"  : column,
-                     "Where"   : where,
-                     "Start"   : start,
-                     "End"     : end
+        aggr_dict = {"AggrType"    : aggr_type,
+                     "Table"       : table,
+                     "Column"      : column,
+                     "Where"       : where,
+                     "Start"       : start,
+                     "End"         : end,
+                     "MeasureUnit" : measure_unit
                     }
         return aggr_dict

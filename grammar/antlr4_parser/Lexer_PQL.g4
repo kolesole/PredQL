@@ -160,6 +160,13 @@ NOT
     ;
 /********************************/ 
 
+/* DATETIME */
+DATETIME
+    : DIGIT DIGIT DIGIT DIGIT '-' DIGIT DIGIT '-' DIGIT DIGIT 
+      WS                               
+      DIGIT DIGIT  DIGIT DIGIT  DIGIT DIGIT 
+    ;
+
 /* NUMBERS */
 FLOAT       
     : DIGIT+ '.' DIGIT*
@@ -194,6 +201,17 @@ SEMI_COLUMN
     ;
 
 /*******************/
+
+/* TIME UNITS */
+TIME_MEASURE_UNIT
+    : ('YEARS'   | 'years')
+    | ('MONTHS'  | 'months')
+    | ('WEEKS'   | 'weeks')
+    | ('DAYS'    | 'days')
+    | ('HOURS'   | 'hours')
+    | ('MINUTES' | 'minutes')
+    | ('SECONDS' | 'seconds')
+    ;
 
 /* FOR USE IN COMPARISONS */
 STRING    
