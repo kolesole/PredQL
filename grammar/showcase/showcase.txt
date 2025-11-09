@@ -24,3 +24,5 @@ PREDICT COUNT(transaction.* WHERE transaction.value > 10, 0, 7)
 FOR EACH user.user_id WHERE COUNT(transaction.*, -7, 0) > 0;
 PREDICT LIST_DISTINCT(transactions.article_id WHERE articles.product_type_name = 'Trousers' AND transactions.price >= 50, 0, 90, days)  
 FOR EACH user.user_id;
+FOR EACH results.driverId WHERE COUNT(results.grid, -7, 8) < 5;
+FOR EACH drivers.driverId WHERE results.code = "HAM";

@@ -32,24 +32,23 @@ where
     ;
 
 condition
-    : num_condition
-    | str_condition
-    | null_check_condition
+    : (aggregation | ID DOT (ID | STAR))  
+      (num_condition | str_condition | null_check_condition)
     ;
 
 num_condition
-    : aggregation NUM_COMP_OP (FLOAT | INT)
-    | ID DOT (ID | STAR) NUM_COMP_OP (DATETIME | FLOAT | INT)
+    : NUM_COMP_OP (FLOAT | INT)
+    | NUM_COMP_OP (DATETIME | FLOAT | INT)
     ;
 
 str_condition
-    : aggregation STR_COMP_OP STRING
-    | ID DOT (ID | STAR) STR_COMP_OP STRING
+    : STR_COMP_OP STRING
+    // | ID DOT (ID | STAR) STR_COMP_OP STRING
     ;
 
 null_check_condition
-    : aggregation NULL_CHECK_OP
-    | ID DOT (ID | STAR) NULL_CHECK_OP
+    : NULL_CHECK_OP
+    // | ID DOT (ID | STAR) NULL_CHECK_OP
     ;
 
 aggregation 

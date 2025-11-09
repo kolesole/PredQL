@@ -1,0 +1,8 @@
+FOR EACH drivers.driverId WHERE drivers.driverId < 1;
+FOR EACH results.driverId WHERE results.driverId == 1;
+FOR EACH drivers.driverId WHERE results.driverId == 1;
+FOR EACH drivers.driverId WHERE AVG(results.rank) < 5;
+FOR EACH results.code;
+FOR EACH drivers.driverId WHERE drivers.forename = 'Max';
+FOR EACH drivers.driverId WHERE drivers.driverRef STARTS WITH "h";
+FOR EACH drivers.driverId WHERE drivers.forename LIKE "Max";

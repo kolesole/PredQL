@@ -147,7 +147,7 @@ class PQLVisitor(Parser_PQLVisitor):
     def visitNum_condition(self, ctx:Parser_PQL.Num_conditionContext):
         ctype = "num"
         comp_op = ctx.NUM_COMP_OP().getText()
-
+    
         N = None
         if ctx.DATETIME():
             N = ctx.DATETIME().getText()
