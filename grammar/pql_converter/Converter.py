@@ -18,24 +18,63 @@ from utils import *
 from grammar.pql_visitor.PQLVisitor import PQLVisitor
 
 class PQLConverter:
-    def __init__(self, db : Database):
+    def __init__(self, 
+                 db : Database, 
+                 timestamps : "pd.Series[pd.Timestamp]"=None) -> None:
+        r"""
+        Create a PQLConverter object.
+
+        The function performs the following steps:
+            - stores a reference to the provided Database object;
+            - create a PQLVisitor instance for query traversal;
+            - opens a temporary DuckDB connection and registers all tables from db;
+            - if timestamps ...;
+            - regiters timestamps_df table with one column - timestamp.
+
+        Args
+        ----
+            db : Database
+                Database object containing the tables.
+            timestamp : pd.Series[pd.Timestamp], optional
+                Initial time points for predictions
+                If not provided.
+        """
+
         self.db = db
-        self.timestamps = None
         self.pql_visitor = PQLVisitor()
 
-        # self.conn = duckdb.connect()
-        # for name, table in db.table_dict.items():
-        #     self.conn.register(name, table.df)
-
-        # self.engine = create_engine(eng_url)
-        # self.metadata = MetaData(bind=self.engine)
-        # self.metadata.reflect()
-
-        # self.cur_time = cur_time
+        self.conn = duckdb.connect()
+        for name, table in db.table_dict.items():
+            self.conn.register(name, table.df)
+        
+        self.timestamps = pd.date_range(start="2010-01-01", end="2010-05-05", freq="D")
+        timestamp_df = pd.DataFrame({"timestamp" : self.timestamps})
+        self.conn.register("timestamp_df", timestamp_df)
 
 
-    def parse_query(self, query : str):
-        input_stream = InputStream(query)
+    def parse_query(self, 
+                    pql_query : str) -> dict:
+        r"""
+        Parse a PQL query string and return its structured dictionary representation.
+
+        The function performs the following steps:
+            - creates an ANTLR input stream from the given pql_query string;
+            - tokenizes the input using Lexer_PQL;
+            - parses the token stream with Parser_PQL to build a parse tree;
+            - visits the parse tree using PQLVisitor to produce a dictionary representation.
+
+        Args
+        ----
+            pql_query : str
+                The PQL query string to be parsed.
+        
+        Returns
+        -------
+            dict
+                A dictionary representing the parsed structure of the PQL query.
+        """
+        
+        input_stream = InputStream(pql_query)
         lexer = Lexer_PQL(input_stream)
         token_stream = CommonTokenStream(lexer)
         
@@ -46,403 +85,450 @@ class PQLConverter:
         return query_dict 
       
     
-    def convert(self, query : str):
-        query_dict = self.parse_query(query)
+    def convert(self, pql_query : str):
+        r"""
+        Convert a PQL query string into an executable SQL query and return the result as a Table object.
+
+        The function acts as the main entry point for translating PQL into SQL. 
+        It first parses the query, identifies its structural components, constructs
+        the corresponding SQL subqueries, executes the final SQL query using DuckDB, 
+        and returns the result as a Table instance.
+
+        The function performs the following steps:
+            - parses the given PQL query string into a dictionary using parse_query;
+            - extracts the for_each clause to determine the base table and primary key;
+            - builds conditional subqueries for where, assuming, and predict parts;
+            - combines these parts into a final SQL query;
+            - executes the SQL query using DuckDB;
+            - wraps the resulting DataFrame in a Table object.
+
+        Args
+        ----
+            `pql_query` : str
+                The PQL query string to be converted and executed.
+
+        Returns
+        -------
+            Table
+                A Table object containing the result of the executed SQL query, 
+                with columns corresponding to the translated PQL query output.
+        """
+        
+        query_dict = self.parse_query(pql_query)
 
         query_parts = query_dict["Qparts"]
-
-        # find for each(we need this to "group by" something)
-
-        for_each_dict = None
-        for qpart in query_parts:
-            if qpart["QType"] == "for_each":
-                for_each_dict = qpart
-                break
+        for_each_dict = self.find_for_each(query_parts)
 
         ptable_name = for_each_dict["Table"]
         ppk_name = for_each_dict["Column"]
-        ptable = self.db.table_dict[ptable_name]
-        ptable_df = ptable.df
 
-    
-        if for_each_dict["Where"]:
-            ptable_df = self.apply_where(for_each_dict["Where"], ptable_name, ptable_df, ppk_name)
-
+        where_dict = for_each_dict["Where"]
+        for_each_query = self.build_where(where_dict, 
+                                          ptable_name, 
+                                          ppk_name) if where_dict else None
+        
+        assuming_query, predict_query, where_query = None, None, None
         for qpart in query_parts:
             match qpart["QType"]:
                 case "for_each":
                     continue
                 case "assuming":
-                    ptable_df = self.apply_assuming(qpart, ptable_name, ptable_df, ppk_name)
+                    assuming_query = self.build_assuming(qpart, 
+                                                         ptable_name, 
+                                                         ppk_name,
+                                                         for_each_query)
                 case "predict":
-                    ptable_df = self.apply_predict(qpart, ptable_name, ptable_df, ppk_name)
+                    predict_query = self.build_predict(qpart, 
+                                                       ptable_name, 
+                                                       ppk_name,
+                                                       for_each_query)
                 case "where":
-                    ptable_df = self.apply_where(qpart, ptable_name, ptable_df, ppk_name)
+                    where_query = self.build_where(qpart, ptable_name, ppk_name)
                 case _:
                     pass
         
+        sql_query = assuming_query if assuming_query else predict_query 
+        sql_query = f"{sql_query};"   
+
+        print(sql_query)
+
+        df = self.conn.sql(sql_query).df
         return Table(
-            df=ptable_df,
+            df=df,
             fkey_col_to_pkey_table=None,
             pkey_col=None,
             time_col="timestamp",
             )
     
 
-    def apply_assuming(self, 
+    def build_assuming(self, 
                        query_dict : dict,
                        ptable_name : str, 
-                       ptable_df : pd.DataFrame, 
-                       ppk_name : str) -> pd.DataFrame:
+                       ppk_name : str,
+                       for_each_query : str) -> str:
         # vyfiltruje tablku a vrati ji
         conditions = query_dict["Conditions"]
         logicalOps = query_dict["LogicalOps"]
 
-        filtered_tables = [
-            self.apply_condition(cond, ptable_name, ptable_df, ppk_name)
+        cond_queries = [
+            self.build_condition(cond, ptable_name, ppk_name)
             for cond in conditions
         ]
 
-        fks = [
-            self.find_fk_name(ftable_name, self.db.table_dict[ftable_name], ptable_name, ppk_name)
-            for ftable_name, ftable_df in filtered_tables  
-        ]
-
-        if len(filtered_tables) == 1:
-            return pd.merge(ptable_df, filtered_tables[0][1], left_on=ppk_name, right_on=fks[0], how="left")
-        
-        
         # TODO for several conditions
+        cond_query = cond_queries[0]
+        # if len(cond_queries) == 1:
+        #     return cond_queries[0]
 
-        # res_query = subqueries[0]
-        # for op, subq in zip(logicalOps, subqueries[1:]):
-        #     match op.lower():
-        #         case "and":
-        #             res_query = select(res_query.c[0]).intersect(select(subq.c[0])).subquery()
-        #         case "or":
-        #             res_query = select(res_query.c[0]).union(select(subq.c[0])).subquery()
-        #         case _:
-        #             pass
+        assuming_query = None
+        if for_each_query:
+            help_query = f"""
+                             SELECT 
+                                 p.{ppk_name} AS {ppk_name},
+                                 c.timestamp  AS timestamp,
+                             FROM 
+                                 {ptable_name} p
+                             JOIN
+                                 ({for_each_query}) c
+                             ON
+                                 c.fk = p.{ppk_name}
+                        """
+            
+            assuming_query = f"""
+                                 SELECT
+                                     hq.{ppk_name} AS {ppk_name},
+                                     hq.timestamp  AS timestamp
+                                 FROM
+                                     ({help_query}) hq
+                                 JOIN
+                                     ({cond_query}) cq
+                                 ON
+                                     cq.fk = hq.{ppk_name}
+                                 AND
+                                     hq.timestamp = cq.timestamp
+                                 ORDER BY 
+                                     hq.timestamp ASC, hq.{ppk_name} ASC
+                            """
+        else:
+            assuming_query = f"""
+                                 SELECT
+                                     p.{ppk_name} AS {ppk_name},
+                                     cq.timestamp AS timestamp
+                                 FROM
+                                     {ptable_name} p
+                                 JOIN
+                                     ({cond_query}) cq
+                                 ON
+                                     cq.fk = p.{ppk_name}
+                                 ORDER BY 
+                                     cq.timestamp ASC, p.{ppk_name} ASC
+                            """       
         
-        # return res_query
+        return assuming_query
+
+
+    def build_predict(self, 
+                      query_dict : dict,
+                      ptable_name : str,  
+                      ppk_name : str,
+                      for_each_query : str) -> str:
+        pred_type = query_dict["PredType"]
+
+        cond_query = None # aggr and id_dot_id are not supported yet
+        match pred_type:
+            case "aggregation": # STATIC TASK
+                table_query = self.build_aggregation(query_dict["Aggregation"], ptable_name, ppk_name)
+            case "condition":
+                cond_query = self.build_condition(query_dict["Condition"], ptable_name, ppk_name)
+            case "id_dot_id": # STATIC TASK
+                table_query = self.build_id_dot_id(query_dict, ptable_name, ppk_name)
+        
+        predict_query = None
+        if for_each_query:
+            help_query = f"""
+                             SELECT 
+                                 p.{ppk_name} AS {ppk_name},
+                                 c.timestamp  AS timestamp,
+                             FROM 
+                                 {ptable_name} p
+                             JOIN
+                                 ({for_each_query}) c
+                             ON
+                                 c.fk = p.{ppk_name}
+                        """
+            
+            predict_query = f"""
+                                SELECT
+                                    hq.{ppk_name} AS {ppk_name},
+                                    hq.timestamp  AS timestamp,
+                                    CASE
+                                        WHEN cq.fk IS NOT NULL THEN TRUE
+                                        ELSE FALSE
+                                    END AS label
+                                FROM
+                                    ({help_query}) hq
+                                LEFT JOIN
+                                    ({cond_query}) cq
+                                ON
+                                    cq.fk = hq.{ppk_name}
+                                AND
+                                    cq.timestamp = hq.timestamp
+                                ORDER BY 
+                                    hq.timestamp ASC, hq.{ppk_name} ASC
+                            """
+        
+        else:
+            predict_query = f"""
+                                SELECT
+                                    p.{ppk_name} AS {ppk_name},
+                                    time.timestamp AS timestamp,
+                                    CASE
+                                        WHEN cq.fk IS NOT NULL THEN TRUE
+                                        ELSE FALSE
+                                    END AS label
+                                FROM
+                                    {ptable_name} p
+                                CROSS JOIN  
+                                    timestamp_df time
+                                LEFT JOIN
+                                    ({cond_query}) cq
+                                ON
+                                    cq.fk = p.{ppk_name}
+                                    AND
+                                    cq.timestamp = time.timestamp
+                                ORDER BY 
+                                    time.timestamp ASC, p.{ppk_name} ASC
+                            """       
+
+        return predict_query
     
 
-    def apply_predict(self, 
-                      query_dict : dict,
-                      ptable_name : str, 
-                      ptable_df : pd.DataFrame, 
-                      ppk_name : str) -> pd.DataFrame:
-        
-        pass
-        
-        # pred_type = query_dict["PredType"]
-
-        # subquery = None
-        # subquery_fk = None
-        # table_name = None
-        # match pred_type:
-        #     case "aggregation":
-        #         subquery, subquery_fk = self._build_aggregation(query_dict["Aggregation"], 
-        #                                        parent_table_name, 
-        #                                        parent_pk_name, 
-        #                                        time_column_name)
-        #         table_name = query_dict["Aggregation"]["Table"]
-        #     case "condition":
-        #         subquery, subquery_fk = self._build_condition(query_dict["Condition"], 
-        #                                      parent_table_name, 
-        #                                      parent_pk_name, 
-        #                                      time_column_name)
-        #         table_name = query_dict["Condition"]["Table"]
-        #     case "id_dot_id":
-        #         subquery = self._build_id_dot_id(query_dict)
-        #         table_name = query_dict["Table"]
-        #     case _:
-        #         pass
-        
-        # table = self.metadata.tables(table_name)
-        # table_pk_name = self._find_child_column_name(table_name, parent_table_name, parent_pk_name)
-        # table_pk = table.c[table_pk_name]
-        # res_query = (
-        #     select(
-        #         table,
-        #         case(
-        #             (exists(select(1).select_from(subquery)
-        #                     .where(subquery_fk == table_pk)), True),
-        #             else_=False).label("label")
-        #         )
-        # )
-
-        # return res_query
-
-
-    def apply_where(self, 
+    def build_where(self, 
                     query_dict : dict,
-                    ptable_name : str, 
-                    ptable_df : pd.DataFrame, 
-                    ppk_name : str) -> pd.DataFrame:
+                    ptable_name : str,  
+                    ppk_name : str) -> str:
         conditions = query_dict["Conditions"]
         logicalOps = query_dict["LogicalOps"]
 
-        filtered_tables = [
-            self.apply_condition(cond, ptable_name, ptable_df, ppk_name)
+        cond_queries = [
+            self.build_condition(cond, ptable_name, ppk_name)
             for cond in conditions
         ]
 
-        fks = [
-            self.find_fk_name(ftable_name, self.db.table_dict[ftable_name], ptable_name, ppk_name)
-            for ftable_name, ftable_df in filtered_tables  
-        ]
-
-        if len(filtered_tables) == 1:
-            # filtered = pd.merge(ptable_df, filtered_tables[0][1], left_on=ppk_name, right_on=fks[0], how="left", indicator=True)
-            # filtered = filtered[filtered["_merge"] == "both"]
-            # filtered = filtered[ptable_df.columns]
-
-            valid_keys = filtered_tables[0][1][fks[0]].unique()
-            filtered = ptable_df[ptable_df[ppk_name].isin(valid_keys)]
-            return filtered
+        if len(cond_queries) == 1:
+            return cond_queries[0]
         
         # TODO for several conditions
-        # for op, subq in zip(logicalOps, filtered_tables[1:]):
-        #     match op.lower():
-        #         case "and":
-        #             res_query = (
-        #                 select(res_query.c[0])
-        #                 .intersect(select(subq.c[0]))
-        #             ).subquery()
-        #         case "or":
-        #             res_query = (
-        #                 select(res_query.c[0])
-        #                 .union(select(subq.c[0]))
-        #             ).subquery()
-        #         case _:
-        #             pass
         
-        # return res_query
 
-        # subqueries = [
-        #     self._build_condition(cond, parent_table_name, parent_pk_name, time_column_name)[0] 
-        #     for cond in conditions
-        # ]
-
-        # if len(subqueries) == 1:
-        #     return subqueries[0]
-        
-        # parent_table = self.metadata.tables[parent_table_name]
-        # parent_pk = parent_table.c[parent_pk_name]
-        
-        # res_query = subqueries[0]
-        # for op, subq in zip(logicalOps, subqueries[1:]):
-        #     match op.lower():
-        #         case "and":
-        #             res_query = (
-        #                 select(res_query.c[0])
-        #                 .intersect(select(subq.c[0]))
-        #             ).subquery()
-        #         case "or":
-        #             res_query = (
-        #                 select(res_query.c[0])
-        #                 .union(select(subq.c[0]))
-        #             ).subquery()
-        #         case _:
-        #             pass
-        
-        # return res_query
-    
-
-    def apply_condition(self, 
+    def build_condition(self, 
                        cond_dict : dict,
                        ptable_name : str, 
-                       ptable_df : pd.DataFrame, 
-                       ppk_name : str) -> Tuple[str, pd.DataFrame]:
+                       ppk_name : str) -> str:
+        r"""
+        Build a SQL query string representing a single conditional expression.
+
+        The function constructs a SQL subquery based on the condition type (CType)
+        and condition structure (CondType) defined in cond_dict. 
+        It determines whether the condition involves an aggregation, a column reference,
+        or a direct value comparison, and generates the appropriate SQL code.
+
+        The resulting query filters rows from the subquery defined by 
+        the corresponding CondType and applies the comparison condition.
+
+        Parameters
+        ----------
+            `cond_dict` : dict
+                Dictionary describing the condition.
+            `ptable_name` : str
+                Name of the parent table used in the condition.
+            `ppk_name` : str
+                Name of the primary key column for the parent table.
+
+        Returns
+        -------
+            str
+                A SQL query string representing the constructed conditional subquery.
+        """
+
         ctype = cond_dict["CType"]
         cond_type = cond_dict["CondType"]
         
-        table_name = None
-        filter_col = None
+        column_name = "col_for_comp"
+        table_query = None
         match cond_type:
             case "aggregation":
-                table_name = cond_dict["Aggregation"]["Table"]
-                filter_col = self.apply_aggregation(cond_dict["Aggregation"], ptable_name, ptable_df, ppk_name)
+                table_query = self.build_aggregation(cond_dict["Aggregation"], ptable_name, ppk_name)
             case "id_dot_id":
-                table_name = cond_dict["Table"]
-                # TODO can be "*"
-                filter_col_name = cond_dict["Column"]
-                filter_col = self.db.table_dict[table_name].df[filter_col_name]
+                table_query = self.build_id_dot_id(cond_dict, ptable_name, ppk_name)
             case _:
                 pass
-        table = self.db.table_dict[table_name]
-        table_df = table.df
         
-        cond_filter = None
+        cond = None
         match ctype:
             case "num":
-                cond_filter = gen_num_filter(cond_dict)
+                cond = build_num_condition(cond_dict)
             case "str":
-                cond_filter = gen_str_filter(cond_dict)
+                cond = build_str_condition(cond_dict)
             case "null":
-                cond_filter = gen_null_filter(cond_dict)
+                cond = build_null_condition(cond_dict)
             case _:
                 pass
         
-        ex = filter_col[0]
-        if type(ex) == str:
-            mask = filter_col.str.contains(r"\s", regex=True)
-            # print(table_df[table_df[filter_col_name] == 'Max'])
-        mask = cond_filter(table_df, filter_col_name)
-        print(mask, table_df[mask])
-        return table_name, table_df[mask]
-
-        # expr = None
-        # table_name = None
-        # match cond_type:
-        #     case "aggregation":
-        #         aggr_table = self._build_aggregation(cond_dict["Aggregation"], 
-        #                                              parent_table_name, 
-        #                                              parent_pk_name, 
-        #                                              time_column_name)[0]
-        #         expr = aggr_table.c["aggr_value"]
-        #         table_name = cond_dict["Aggregation"]["Table"]
-        #     case "id_dot_id":
-        #         expr = self._build_id_dot_id(cond_dict)
-        #         table_name = cond_dict["Table"]
-        #     case _:
-        #         pass
+        res_query = f"""
+                        SELECT 
+                            *
+                        FROM 
+                            ({table_query}) tq
+                        WHERE
+                            {cond(column_name)}"""
         
-        # cond = None
-        # match ctype:
-        #     case "num":
-        #         cond = gen_num_condition(cond_dict)
-        #     case "str":
-        #         cond = gen_str_condition(cond_dict)
-        #     case "null":
-        #         cond = gen_null_check_condition(cond_dict)
-        #     case _:
-        #         pass
-        
-        # table = self.metadata.tables[table_name]
-        # parent_table = self.metadata.tables[parent_table_name]
-        # parent_pk = parent_table.c[parent_pk_name]
-        # time_column = table.c[time_column_name]
-
-        # stmt = None
-        # if table is parent_table:
-        #     stmt = (
-        #         select(table)
-        #         .where(and_(cond(expr), time_column <= self.cur_time))
-        #     ).subquery()
-        # else:
-        #     child_fk_name = self._find_child_column_name(table_name, parent_table_name, parent_pk_name)
-        #     child_fk = table.c[child_fk_name]
-        #     stmt = (
-        #         select(table)
-        #         .select_from(
-        #             parent_table.join(table, parent_pk == child_fk)
-        #         )
-        #         .where(and_(cond(expr), time_column <= self.cur_time))
-        #     ).subquery()
-
-        # return stmt, child_fk
+        return res_query
     
 
-    def apply_aggregation(self, 
+    def build_aggregation(self, 
                           aggr_dict : dict,
-                          ptable_name : str, 
-                          ptable_df : pd.DataFrame, 
-                          ppk_name : str) -> pd.Series:
-        aggr_type = aggr_dict["AggrType"].lower()
+                          ptable_name : str,  
+                          ppk_name : str) -> str:
         table_name = aggr_dict["Table"]
-        column_name = aggr_dict["Column"]
+        start = int(aggr_dict["Start"])
+        end = int(aggr_dict["End"])
+        measure_unit = aggr_dict["MeasureUnit"].upper().removesuffix("S")
+        
+        fk = self.find_fk(table_name, ptable_name, ppk_name)
+        time_column = self.find_time_column(table_name)
+        aggr_func = build_aggr_func(aggr_dict)
 
-        table = self.db.table_dict[table_name]
-        table_df = table.df.copy()
-        fk = self.find_fk_name(table_name, table, ptable_name, ppk_name)
-
-        aggr_func = gen_aggr_func(aggr_type)
+        res_query = f"""
+                        SELECT 
+                            tbl.{fk}           AS fk,
+                            {aggr_func("tbl")} AS col_for_comp,
+                            time.timestamp     AS timestamp
+                        FROM
+                            timestamp_df time
+                        JOIN
+                            {table_name} tbl
+                        ON 
+                            tbl.{time_column} >= time.timestamp + INTERVAL '{start} {measure_unit}'
+                            AND
+                            tbl.{time_column} < time.timestamp + INTERVAL '{end} {measure_unit}'
+                        GROUP BY time.timestamp, tbl.{fk}"""
 
         # TODO where in aggregation
-        # where = aggr_dict["Where"]
-        # if where:
-        #     table = 
+        # where = aggr_dict["Where"] # STATIC TASK
 
-        # TODO column_name can be "*"
+        # TODO column_name can be "*" # DONE
+        return res_query
+        
 
-        aggr_col = table_df.groupby(fk)[column_name].transform(aggr_func)
+    def build_id_dot_id(self,
+                        some_dict : dict,
+                        ptable_name : str,
+                        ppk_name : str) -> str:
+        table_name = some_dict["Table"]
+        # TODO column can be "*" DONE
+        column_name = some_dict["Column"]
 
-        return aggr_col
+        fk = self.find_fk(table_name, ptable_name, ppk_name)
+
+        res_query = f"""
+                        SELECT 
+                            {fk}          AS fk,
+                            {column_name} AS col_for_comp
+                        FROM
+                            {table_name}"""
+
+        return res_query
 
 
-    def find_fk_name(self, 
-                     ctable_name : str, 
-                     ctable : Table, 
-                     ptable_name : str,
-                     ppk_name) -> str:
+    def find_fk(self, 
+                ctable_name : str, 
+                ptable_name : str,
+                ppk_name : str) -> str:
+        r"""
+        Find the foreign key column in a child table that references the parent table.
+
+        The function searches for the column in the child table (`ctable_name`)
+        that serves as a foreign key referencing the primary key of the parent table (`ptable_name`).
+        If the child and parent tables are the same, the function returns the primary key name.
+
+        Args
+        ----
+            `ctable_name` : str
+                Name of the child table.
+            `ptable_name` : str
+                Name of the parent table.
+            `ppk_name` : str
+                Name of the primary key column in the parent table.
+
+        Returns
+        -------
+            str
+                The name of the foreign key column in the child table that references the parent table.
+                Returns an empty string if no foreign key relationship is found.
+        """
+
         if ctable_name == ptable_name:
             return ppk_name
         
+        ctable = self.db.table_dict[ctable_name]
         for k, v in ctable.fkey_col_to_pkey_table.items():
             if v == ptable_name:
                 return k
         
         return ""
-
-
-        # column = table.c[column_name] if column_name != "*" else table.c[list(table.c.keys())[0]]
-        
-        # aggr_op = gen_aggr_op(aggr_type)
-        # time_column = table.c[time_column_name]
-
-        # parent_table = self.metadata.tables[parent_table_name]
-        # parent_pk = parent_table.c[parent_pk_name]
-
-        # child_fk_name = self._find_child_column_name(table, parent_table_name, parent_pk_name)
-        # child_fk = table.c[child_fk_name]
-
-        # aggregation = aggr_op(column).label("aggr_value")
-
-        # stmt = select(child_fk, aggregation).select_from(table)
-        
-        # # time filter
-
-        # start = aggr_dict["Start"]
-        # end = aggr_dict["End"]
-        # time_unit = aggr_dict["MeasureUnit"]
-
-        # if start is not None and end is not None and time_unit is not None:
-        #     time_unit = time_unit.lower()
-        #     time_filter = and_(
-        #             time_column >= self.cur_time + text(f"interval '{start} {time_unit}'"),
-        #             time_column <= self.cur_time + text(f"interval '{end} {time_unit}'")
-        #     )
-        #     stmt = stmt.where(time_filter)
-
-        # stmt = stmt.group_by(child_fk)
-
-
-        # return (stmt.subquery(), child_fk)
-
-    
-    # def apply_id_dot_id(self, some_dict : dict):
-    #     #TODO
-    #     table_name = some_dict["Table"]
-    #     column_name = some_dict["Column"]
-    #     table = self.metadata.tables[table_name]
-    #     expr = table.c[column_name] if column_name != "*" else table.c[list(table.c.keys())[0]]
-        
-    #     #time filtering
-
-    #     return expr
-
-        
     
 
-    # def _find_child_column_name(self, child_table_name, parent_table_name, parent_pk_name):
-    #     child_table = self.metadata.tables[child_table_name]
-    #     parent_table = self.metadata.tables[parent_table_name]
+    def find_time_column(self,
+                         table_name : str) -> str:
+        r"""
+        Find the name of the time column for a given table.
 
-    #     parent_pk = parent_table.c[parent_pk_name]
+        The function looks up the specified table in the database dictionary
+        and returns the name of its associated time column.
 
-    #     for fk in child_table.foreign_keys:
-    #         if fk.column is parent_pk:
-    #             return fk.parent.name
+        Args
+        ----
+            `table_name` : str
+                Name of the table whose time column is to be found.
+
+        Returns
+        -------
+            str
+                The name of the time column associated with the specified table.
+        """
+
+        table = self.db.table_dict[table_name]
+
+        return table.time_col
+    
+
+    def find_for_each(self, 
+                      query_parts : list) -> dict:
+        r"""
+        Find the `for_each` clause from a parsed PQL query structure.
+
+        The function iterates over the list of query parts and returns 
+        the dictionary representing where "QType" equals "for_each".
+
+        Args
+        ----
+            `query_parts` : dict
+                List of parsed query components, each represented as a dictionary.
+
+        Returns
+        -------
+            dict
+                The dictionary corresponding to the `for_each` clause if found, otherwise `None`.
+        """
+
+        for_each_dict = None
+        for qpart in query_parts:
+            if qpart["QType"] == "for_each":
+                for_each_dict = qpart
+                break
+        
+        return for_each_dict
+
+
         

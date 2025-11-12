@@ -1,74 +1,54 @@
 
-def gen_num_filter(cond_dict : dict):
+def build_num_condition(cond_dict : dict):
     tmp = cond_dict["N"]
     N = float(tmp) if "." in tmp else int(tmp)
 
     comp_op = cond_dict["CompOp"]
-    match comp_op:
-        case "!=":
-            return lambda df, col : df[col.astype(float) != N]
-        case "<":
-            return lambda df, col : df[col.astype(float) < N]
-        case "<=":
-            return lambda df, col : df[col.astype(float) <= N]
-        case "==":
-            return lambda df, col : df[col.astype(float) == N]
-        case ">":
-            return lambda df, col : df[col.astype(float) > N]
-        case ">=":
-            return lambda df, col : df[col.astype(float) >= N]
-        case _:
-            pass
+
+    return lambda column : f"{column} {comp_op} {N}"
+    
 
 
-def gen_str_filter(cond_dict : dict):
+def build_str_condition(cond_dict : dict):
     s = cond_dict["String"]
-    print(s)
-    # import re
-    # has_space = bool(re.search(r"\s", s))
-    # print(has_space)
-
     comp_op = cond_dict["CompOp"].lower()
+
     match comp_op:
-        case "not like":
-            return lambda df, col : df[~col.astype(str).str.match(s)]
-        case "not contains":
-            return lambda df, col : df[~col.astype(str).str.contains(s, na=False)]
-        case "ends with":
-            return lambda df, col : df[col.astype(str).str.endswith(s, na=False)]
-        case "starts with":
-            return lambda df, col : df[col.astype(str).str.startswith(s, na=False)]
-        case "like":
-            return lambda df, col : df[col.astype(str).str.match(s)]
         case "contains":
-            return lambda df, col : df[col.astype(str).str.contains(s, na=False)]
+            return lambda column : f"{column} LIKE '%{s}%'"
+        case "not contains":
+            return lambda column : f"{column} NOT LIKE '%{s}%'"
+        case "like":
+            return lambda column : f"{column} LIKE '{s}'"
+        case "not like":
+            return lambda column : f"{column} NOT LIKE '{s}'"
+        case "starts with":
+            return lambda column : f"{column} LIKE '{s}%'"
+        case "ends with":
+            return lambda column : f"{column} LIKE '%{s}'"
         case "=":
-            def _cond(df, col):
-                return df[col] == s
-            return _cond
+            return lambda column : f"{column} = '{s}'"
         case _:
             pass
 
 
-def gen_null_filter(cond_dict : dict):
-    check_op = cond_dict["CheckOp"].lower()
-    match check_op:
-        case "is not null":
-            return lambda df, col : df[col.isna()]
-        case "is null":
-            return lambda df, col : df[col.notna()]
-        case _:
-            pass
+def build_null_condition(cond_dict : dict):
+    check_op = cond_dict["CheckOp"].upper()
+    
+    return lambda column : f"{column} {check_op}"
 
 
-def gen_aggr_func(aggr_type):
+def build_aggr_func(aggr_dict : dict):
+    aggr_type = aggr_dict["AggrType"].lower()
+    column = aggr_dict["Column"]
+
     match aggr_type:
         case "avg":
-            return lambda series : series.mean()
+            return lambda table_name : f"AVG({table_name}.{column})"
         case "count":
-            return lambda series : series.count()
+            return lambda table_name : f"COUNT({table_name}.{column})"
         case "count_distinct":
-            return lambda series : series.nunique()
+            return lambda table_name : f"COUNT(DISTINCT {table_name}.{column})"
         case "first":
             pass
         case "last":
@@ -76,11 +56,11 @@ def gen_aggr_func(aggr_type):
         case "list_distinct":
             pass
         case "max":
-            return lambda series : series.max()
+            return lambda table_name : f"MAX({table_name}.{column})"
         case "min":
-            return lambda series : series.min()
+            return lambda table_name : f"MIN({table_name}.{column})"
         case "sum":
-            return lambda series : series.sum()
+            return lambda table_name : f"SUM({table_name}.{column})"
         case _:
             pass
 
