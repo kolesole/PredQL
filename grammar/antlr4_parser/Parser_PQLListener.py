@@ -1,4 +1,4 @@
-# Generated from Parser_PQL.g4 by ANTLR 4.13.1
+# Generated from Parser_PQL.g4 by ANTLR 4.13.2
 from antlr4 import *
 if "." in __name__:
     from .Parser_PQL import Parser_PQL
@@ -14,15 +14,6 @@ class Parser_PQLListener(ParseTreeListener):
 
     # Exit a parse tree produced by Parser_PQL#query.
     def exitQuery(self, ctx:Parser_PQL.QueryContext):
-        pass
-
-
-    # Enter a parse tree produced by Parser_PQL#help_query.
-    def enterHelp_query(self, ctx:Parser_PQL.Help_queryContext):
-        pass
-
-    # Exit a parse tree produced by Parser_PQL#help_query.
-    def exitHelp_query(self, ctx:Parser_PQL.Help_queryContext):
         pass
 
 
@@ -59,6 +50,33 @@ class Parser_PQLListener(ParseTreeListener):
 
     # Exit a parse tree produced by Parser_PQL#where.
     def exitWhere(self, ctx:Parser_PQL.WhereContext):
+        pass
+
+
+    # Enter a parse tree produced by Parser_PQL#expr_or.
+    def enterExpr_or(self, ctx:Parser_PQL.Expr_orContext):
+        pass
+
+    # Exit a parse tree produced by Parser_PQL#expr_or.
+    def exitExpr_or(self, ctx:Parser_PQL.Expr_orContext):
+        pass
+
+
+    # Enter a parse tree produced by Parser_PQL#expr_and.
+    def enterExpr_and(self, ctx:Parser_PQL.Expr_andContext):
+        pass
+
+    # Exit a parse tree produced by Parser_PQL#expr_and.
+    def exitExpr_and(self, ctx:Parser_PQL.Expr_andContext):
+        pass
+
+
+    # Enter a parse tree produced by Parser_PQL#expr_term.
+    def enterExpr_term(self, ctx:Parser_PQL.Expr_termContext):
+        pass
+
+    # Exit a parse tree produced by Parser_PQL#expr_term.
+    def exitExpr_term(self, ctx:Parser_PQL.Expr_termContext):
         pass
 
 

@@ -8,6 +8,7 @@ from antlr4 import *
 from antlr4_parser.Lexer_PQL import Lexer_PQL
 from antlr4_parser.Parser_PQL import Parser_PQL
 from pql_visitor.PQLVisitor import PQLVisitor
+from pql_converter.Converter import PQLConverter
 
 def print_tree(node, parser, indent=0):
    
@@ -28,7 +29,9 @@ def parse_query(query: str):
     parser = Parser_PQL(token_stream)
 
     tree = parser.query()
-
+    
+    print("=== Input Query ===")
+    print(query)
     print("=== Parse Tree ===")
     print_tree(tree, parser)
     visitor = PQLVisitor()
@@ -37,16 +40,14 @@ def parse_query(query: str):
 
     return tree
 
-if __name__ == "__main__":
-    with open('showcase.txt', "r") as f:
-        query = ""
-        for l in f:
-            query += l
-            if ';' in l:
-                print(query)
-                parse_query(query)
-                query = ""
-    # while 1:
-    #     # query = input("Enter PQL-query: ")
-    #     parse_query(query)
+class ConverterShowcaseHelper:
+    def __init__(self, dataset):
+        self.pql_converter = PQLConverter(dataset.make_db())
+
+    def convert_query(self, query):
+        print("========================================")
+        print(query)
+        table = self.pql_converter.convert(query)
+        print(table)
+        print("========================================")
 

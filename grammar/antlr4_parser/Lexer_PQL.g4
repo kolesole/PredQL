@@ -142,10 +142,11 @@ IS_NULL
     ;
 
 /* logical operations */
-LOGICAL_OP
-    : AND
-    | OR
-    ;
+// LOGICAL_OP
+//     : AND
+//     | OR
+//     ;
+
 AND
     : 'AND'
     | 'and'

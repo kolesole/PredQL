@@ -1,4 +1,4 @@
-# Generated from Parser_PQL.g4 by ANTLR 4.13.1
+# Generated from Parser_PQL.g4 by ANTLR 4.13.2
 from antlr4 import *
 if "." in __name__:
     from .Parser_PQL import Parser_PQL
@@ -11,11 +11,6 @@ class Parser_PQLVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by Parser_PQL#query.
     def visitQuery(self, ctx:Parser_PQL.QueryContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by Parser_PQL#help_query.
-    def visitHelp_query(self, ctx:Parser_PQL.Help_queryContext):
         return self.visitChildren(ctx)
 
 
@@ -36,6 +31,21 @@ class Parser_PQLVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by Parser_PQL#where.
     def visitWhere(self, ctx:Parser_PQL.WhereContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by Parser_PQL#expr_or.
+    def visitExpr_or(self, ctx:Parser_PQL.Expr_orContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by Parser_PQL#expr_and.
+    def visitExpr_and(self, ctx:Parser_PQL.Expr_andContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by Parser_PQL#expr_term.
+    def visitExpr_term(self, ctx:Parser_PQL.Expr_termContext):
         return self.visitChildren(ctx)
 
 

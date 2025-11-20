@@ -1,0 +1,5 @@
+PREDICT user.id
+FOR EACH user.id WHERE NOT inf.age == 10;
+
+RESULT:
+{'Predict': {'QType': 'predict', 'PredType': 'id_dot_id', 'Aggregation': None, 'Condition': None, 'Table': 'user', 'Column': 'id', 'RankTop': False, 'K': None, 'Classify': False}, 'ForEach': {'QType': 'for_each', 'Table': 'user', 'Column': 'id', 'Where': {'QType': 'where', 'Expr': {'Op': None, 'Left': {'Op': None, 'Left': {'CType': 'num', 'CompOp': '==', 'N': '10', 'CondType': 'id_dot_id', 'NOT': True, 'Aggregation': None, 'Table': 'inf', 'Column': 'age'}, 'Right': None}, 'Right': None}}}, 'Assuming': None, 'Where': None}

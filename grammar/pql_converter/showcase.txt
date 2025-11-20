@@ -1,1 +1,0 @@
-FOR EACH drivers.driverId WHERE results.rank == 1;

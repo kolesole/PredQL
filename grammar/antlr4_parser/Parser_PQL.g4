@@ -3,18 +3,11 @@ parser grammar Parser_PQL ;
 options { tokenVocab=Lexer_PQL; }    // import tokens from the lexer grammar
 
 query
-    : help_query+ SEMI_COLUMN
-    ;
-
-help_query
-    : assuming 
-    | for_each 
-    | predict 
-    | where
+    : predict for_each (assuming)? (where)?  SEMI_COLUMN
     ;
     
 assuming    
-    : ASSUMING condition (LOGICAL_OP condition)* 
+    : ASSUMING expr_or
     ;
 
 for_each
@@ -28,27 +21,37 @@ predict
     ;
     
 where
-    : WHERE condition (LOGICAL_OP condition)* 
+    : WHERE expr_or 
+    ;
+
+expr_or
+    : expr_and (OR expr_and)*
+    ;
+
+expr_and
+    : expr_term (AND expr_term)*
+    ;
+
+expr_term
+    : condition
+    | OPEN_PAREN expr_or CLOSE_PAREN
     ;
 
 condition
-    : (aggregation | ID DOT (ID | STAR))  
+    : (NOT)? (aggregation | ID DOT (ID | STAR))  
       (num_condition | str_condition | null_check_condition)
     ;
-
+// nezapomenout se zeptat o NOT
 num_condition
-    : NUM_COMP_OP (FLOAT | INT)
-    | NUM_COMP_OP (DATETIME | FLOAT | INT)
+    : NUM_COMP_OP (DATETIME | FLOAT | INT)
     ;
 
 str_condition
-    : STR_COMP_OP STRING
-    // | ID DOT (ID | STAR) STR_COMP_OP STRING
+    : STR_COMP_OP STRING 
     ;
 
 null_check_condition
     : NULL_CHECK_OP
-    // | ID DOT (ID | STAR) NULL_CHECK_OP
     ;
 
 aggregation 

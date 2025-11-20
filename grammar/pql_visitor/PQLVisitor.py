@@ -10,37 +10,26 @@ from antlr4_parser.Parser_PQLVisitor import Parser_PQLVisitor
 class PQLVisitor(Parser_PQLVisitor):
     # Visit a parse tree produced by Parser_PQL#query.
     def visitQuery(self, ctx:Parser_PQL.QueryContext):
-        query_parts = [self.visit(query) for query in ctx.help_query()]
-
-        query_dict = {"Qparts" : query_parts}
-        return query_dict
-    
-    # Visit a parse tree produced by Parser_PQL#help_query.
-    def visitHelp_query(self, ctx:Parser_PQL.QueryContext):
-        query_dict = None
-        if ctx.assuming():
-            query_dict = self.visit(ctx.assuming())
-        elif ctx.for_each():
-            query_dict = self.visit(ctx.for_each())
-        elif ctx.predict():
-            query_dict = self.visit(ctx.predict())
-        elif ctx.where():
-            query_dict = self.visit(ctx.where())
-        else:
-            pass
-
+        predict = self.visit(ctx.predict())
+        for_each = self.visit(ctx.for_each())
+        assuming = self.visit(ctx.assuming()) if ctx.assuming() else None
+        where = self.visit(ctx.where()) if ctx.where() else None
+        
+        query_dict = {"Predict" : predict,
+                      "ForEach" : for_each,
+                      "Assuming": assuming,
+                      "Where"   : where 
+                     }
         return query_dict
 
 
     # Visit a parse tree produced by Parser_PQL#assuming.
     def visitAssuming(self, ctx:Parser_PQL.AssumingContext):
         qtype = "assuming"
-        conditions = [self.visit(cond) for cond in ctx.condition()]
-        logical_ops = [op.getText() for op in ctx.LOGICAL_OP()]
+        expr = self.visit(ctx.expr_or())
         
-        assuming_dict = {"QType"      : qtype,
-                         "Conditions" : conditions,
-                         "LogicalOps" : logical_ops
+        assuming_dict = {"QType" : qtype,
+                         "Expr"  : expr    
                         }
         return assuming_dict
 
@@ -100,20 +89,59 @@ class PQLVisitor(Parser_PQLVisitor):
     # Visit a parse tree produced by Parser_PQL#where.
     def visitWhere(self, ctx:Parser_PQL.WhereContext):
         qtype = "where"
-        conditions = [self.visit(cond) for cond in ctx.condition()]
-        logical_ops = [op.getText() for op in ctx.LOGICAL_OP()]
+        expr = self.visit(ctx.expr_or())    
 
-        where_dict = {"QType"      : qtype,
-                      "Conditions" : conditions,
-                      "LogicalOps" : logical_ops
+        where_dict = {"QType" : qtype,
+                      "Expr"  : expr
                      }
         return where_dict
+    
+     # Visit a parse tree produced by Parser_PQL#expr_or.
+    def visitExpr_or(self, ctx:Parser_PQL.Expr_orContext):
+        expr_dict = None
+        if len(ctx.expr_and()) == 1:
+            return self.visit(ctx.expr_and(0))
+        
+        expr_dict = self.visit(ctx.expr_and(0))
+        for i in range(1, len(ctx.expr_and())):
+            right = self.visit(ctx.expr_and(i))
+            expr_dict = {"Op"   : "OR", 
+                         "Left" : expr_dict, 
+                         "Right": right
+                     }
+
+        return expr_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#expr_and.
+    def visitExpr_and(self, ctx:Parser_PQL.Expr_andContext):
+        if len(ctx.expr_term()) == 1:
+            return self.visit(ctx.expr_term(0))
+        
+        expr_dict = self.visit(ctx.expr_term(0))
+        for i in range(1, len(ctx.expr_term())):
+            right = self.visit(ctx.expr_term(i))
+            expr_dict = {"Op"   : "AND", 
+                         "Left" : expr_dict, 
+                         "Right": right
+                        }
+
+        return expr_dict
+
+
+    # Visit a parse tree produced by Parser_PQL#expr_term.
+    def visitExpr_term(self, ctx:Parser_PQL.Expr_termContext):
+        if ctx.condition():
+            return self.visit(ctx.condition())
+        elif ctx.expr_or():
+            return self.visit(ctx.expr_or())
 
 
     # Visit a parse tree produced by Parser_PQL#condition.
     def visitCondition(self, ctx:Parser_PQL.ConditionContext):
         cond_dict = None
         cond_type = None
+        NOT = True if ctx.NOT() else False
         aggregation = None
         table = None
         column = None
@@ -136,6 +164,7 @@ class PQLVisitor(Parser_PQLVisitor):
             pass
 
         cond_dict["CondType"] = cond_type
+        cond_dict["NOT"] = NOT
         cond_dict["Aggregation"] = aggregation
         cond_dict["Table"] = table
         cond_dict["Column"] = column
@@ -179,7 +208,7 @@ class PQLVisitor(Parser_PQLVisitor):
     # Visit a parse tree produced by Parser_PQL#null_check_condition.
     def visitNull_check_condition(self, ctx:Parser_PQL.Null_check_conditionContext):
         ctype = "null"
-        check_op = ctx.NULL_CHECK_OP(0).getText()
+        check_op = ctx.NULL_CHECK_OP().getText()
 
         null_cond_dict = {"CType"   : ctype,
                           "CheckOp" : check_op

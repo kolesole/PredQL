@@ -12,10 +12,10 @@ import duckdb
 from typing import Tuple
 
 from antlr4 import *
-from grammar.antlr4_parser.Lexer_PQL import Lexer_PQL
-from grammar.antlr4_parser.Parser_PQL import Parser_PQL 
-from utils import *
-from grammar.pql_visitor.PQLVisitor import PQLVisitor
+from antlr4_parser.Lexer_PQL import Lexer_PQL
+from antlr4_parser.Parser_PQL import Parser_PQL 
+from .utils import *
+from pql_visitor.PQLVisitor import PQLVisitor
 
 class PQLConverter:
     def __init__(self, 
@@ -116,38 +116,53 @@ class PQLConverter:
         
         query_dict = self.parse_query(pql_query)
 
-        query_parts = query_dict["Qparts"]
-        for_each_dict = self.find_for_each(query_parts)
-
+        for_each_dict = query_dict["ForEach"]
         ptable_name = for_each_dict["Table"]
         ppk_name = for_each_dict["Column"]
+        for_each_query = None
+        if for_each_dict["Where"]:
+            for_each_query = self.build_where(for_each_dict["Where"], 
+                                              ptable_name, 
+                                              ppk_name)
+        
+        predict_dict = query_dict["Predict"]
+        sql_query = self.build_predict(predict_dict, 
+                                       ptable_name, 
+                                       ppk_name,
+                                       for_each_query)
 
-        where_dict = for_each_dict["Where"]
-        for_each_query = self.build_where(where_dict, 
-                                          ptable_name, 
-                                          ppk_name) if where_dict else None
+        assuming_dict = query_dict["Assuming"]
+        if assuming_dict:
+            sql_query = self.build_assuming(assuming_dict, 
+                                            ptable_name, 
+                                            ppk_name,
+                                            sql_query)
+
+        where_dict = query_dict["Where"]
+        where_query = None
+        if where_dict:
+            where_query = self.build_where(where_dict, 
+                                           ptable_name, 
+                                           ppk_name)
+            
+            sql_query = f"""
+                            SELECT 
+                                s.fk fk,
+                                s.timestamp,
+                                s.label
+                            FROM 
+                                ({sql_query}) s
+                            JOIN
+                                ({where_query}) w
+                            ON
+                                w.fk = s.fk
+                            AND
+                                w.timestamp = s.timestamp
+                            ORDER BY 
+                                s.timestamp ASC, s.fk ASC
+                             
+                         """
         
-        assuming_query, predict_query, where_query = None, None, None
-        for qpart in query_parts:
-            match qpart["QType"]:
-                case "for_each":
-                    continue
-                case "assuming":
-                    assuming_query = self.build_assuming(qpart, 
-                                                         ptable_name, 
-                                                         ppk_name,
-                                                         for_each_query)
-                case "predict":
-                    predict_query = self.build_predict(qpart, 
-                                                       ptable_name, 
-                                                       ppk_name,
-                                                       for_each_query)
-                case "where":
-                    where_query = self.build_where(qpart, ptable_name, ppk_name)
-                case _:
-                    pass
-        
-        sql_query = assuming_query if assuming_query else predict_query 
         sql_query = f"{sql_query};"   
 
         print(sql_query)
@@ -165,64 +180,38 @@ class PQLConverter:
                        query_dict : dict,
                        ptable_name : str, 
                        ppk_name : str,
-                       for_each_query : str) -> str:
-        # vyfiltruje tablku a vrati ji
-        conditions = query_dict["Conditions"]
-        logicalOps = query_dict["LogicalOps"]
+                       predict_query : str) -> str:
+        expr_dict = query_dict["Expr"]
+        expr_query = self.build_expr(expr_dict, ptable_name, ppk_name)
 
-        cond_queries = [
-            self.build_condition(cond, ptable_name, ppk_name)
-            for cond in conditions
-        ]
-
-        # TODO for several conditions
-        cond_query = cond_queries[0]
-        # if len(cond_queries) == 1:
-        #     return cond_queries[0]
-
-        assuming_query = None
-        if for_each_query:
-            help_query = f"""
-                             SELECT 
-                                 p.{ppk_name} AS {ppk_name},
-                                 c.timestamp  AS timestamp,
-                             FROM 
-                                 {ptable_name} p
-                             JOIN
-                                 ({for_each_query}) c
-                             ON
-                                 c.fk = p.{ppk_name}
-                        """
+        help_query = f"""
+                         SELECT 
+                             p.{ppk_name} AS {ppk_name},
+                             pred.timestamp  AS timestamp,
+                             pred.label AS label
+                         FROM 
+                             {ptable_name} p
+                         JOIN
+                             ({predict_query}) pred
+                         ON
+                             pred.fk = p.{ppk_name}
+                      """
             
-            assuming_query = f"""
-                                 SELECT
-                                     hq.{ppk_name} AS {ppk_name},
-                                     hq.timestamp  AS timestamp
-                                 FROM
-                                     ({help_query}) hq
-                                 JOIN
-                                     ({cond_query}) cq
-                                 ON
-                                     cq.fk = hq.{ppk_name}
-                                 AND
-                                     hq.timestamp = cq.timestamp
-                                 ORDER BY 
-                                     hq.timestamp ASC, hq.{ppk_name} ASC
-                            """
-        else:
-            assuming_query = f"""
-                                 SELECT
-                                     p.{ppk_name} AS {ppk_name},
-                                     cq.timestamp AS timestamp
-                                 FROM
-                                     {ptable_name} p
-                                 JOIN
-                                     ({cond_query}) cq
-                                 ON
-                                     cq.fk = p.{ppk_name}
-                                 ORDER BY 
-                                     cq.timestamp ASC, p.{ppk_name} ASC
-                            """       
+        assuming_query = f"""
+                             SELECT
+                                 hq.{ppk_name} AS {ppk_name},
+                                 hq.timestamp  AS timestamp
+                             FROM
+                                 ({help_query}) hq
+                             JOIN
+                                 ({expr_query}) eq
+                             ON
+                                 eq.fk = hq.{ppk_name}
+                             AND
+                                 eq.timestamp = hq.timestamp
+                             ORDER BY 
+                                 hq.timestamp ASC, hq.{ppk_name} ASC
+                          """
         
         return assuming_query
 
@@ -234,12 +223,19 @@ class PQLConverter:
                       for_each_query : str) -> str:
         pred_type = query_dict["PredType"]
 
-        cond_query = None # aggr and id_dot_id are not supported yet
+        type_query = None # aggr and id_dot_id are not supported yet
+        label_query = None
         match pred_type:
-            case "aggregation": # STATIC TASK
-                table_query = self.build_aggregation(query_dict["Aggregation"], ptable_name, ppk_name)
+            case "aggregation":
+                type_query = self.build_aggregation(query_dict["Aggregation"], ptable_name, ppk_name)
+                label_query = "tq.col_for_comp"
             case "condition":
-                cond_query = self.build_condition(query_dict["Condition"], ptable_name, ppk_name)
+                type_query = self.build_condition(query_dict["Condition"], ptable_name, ppk_name)
+                label_query = """CASE
+                                     WHEN tq.fk IS NOT NULL THEN TRUE
+                                     ELSE FALSE
+                                 END
+                              """
             case "id_dot_id": # STATIC TASK
                 table_query = self.build_id_dot_id(query_dict, ptable_name, ppk_name)
         
@@ -259,20 +255,17 @@ class PQLConverter:
             
             predict_query = f"""
                                 SELECT
-                                    hq.{ppk_name} AS {ppk_name},
+                                    hq.{ppk_name} AS fk,
                                     hq.timestamp  AS timestamp,
-                                    CASE
-                                        WHEN cq.fk IS NOT NULL THEN TRUE
-                                        ELSE FALSE
-                                    END AS label
+                                    {label_query} AS label
                                 FROM
                                     ({help_query}) hq
                                 LEFT JOIN
-                                    ({cond_query}) cq
+                                    ({type_query}) tq
                                 ON
-                                    cq.fk = hq.{ppk_name}
+                                    tq.fk = hq.{ppk_name}
                                 AND
-                                    cq.timestamp = hq.timestamp
+                                    tq.timestamp = hq.timestamp
                                 ORDER BY 
                                     hq.timestamp ASC, hq.{ppk_name} ASC
                             """
@@ -280,22 +273,19 @@ class PQLConverter:
         else:
             predict_query = f"""
                                 SELECT
-                                    p.{ppk_name} AS {ppk_name},
+                                    p.{ppk_name} AS fk,
                                     time.timestamp AS timestamp,
-                                    CASE
-                                        WHEN cq.fk IS NOT NULL THEN TRUE
-                                        ELSE FALSE
-                                    END AS label
+                                    {label_query} AS label
                                 FROM
                                     {ptable_name} p
                                 CROSS JOIN  
                                     timestamp_df time
                                 LEFT JOIN
-                                    ({cond_query}) cq
+                                    ({type_query}) tq
                                 ON
-                                    cq.fk = p.{ppk_name}
+                                    tq.fk = p.{ppk_name}
                                     AND
-                                    cq.timestamp = time.timestamp
+                                    tq.timestamp = time.timestamp
                                 ORDER BY 
                                     time.timestamp ASC, p.{ppk_name} ASC
                             """       
@@ -307,24 +297,50 @@ class PQLConverter:
                     query_dict : dict,
                     ptable_name : str,  
                     ppk_name : str) -> str:
-        conditions = query_dict["Conditions"]
-        logicalOps = query_dict["LogicalOps"]
+        expr_dict = query_dict["Expr"]
+        expr_query = self.build_expr(expr_dict, ptable_name, ppk_name)
+        return expr_query
 
-        cond_queries = [
-            self.build_condition(cond, ptable_name, ppk_name)
-            for cond in conditions
-        ]
+    
+    def build_expr(self, 
+                   expr_dict : dict,
+                   ptable_name : str,
+                   ppk_name : str) -> str:
+        
+        expr_query = None
+        if "Op" in expr_dict:
+            left_query = self.build_expr(expr_dict["Left"], ptable_name, ppk_name)
+            right_query = self.build_expr(expr_dict["Right"], ptable_name, ppk_name)
 
-        if len(cond_queries) == 1:
-            return cond_queries[0]
+            op = expr_dict["Op"].lower()
+            filt = None
+            if op == "and":
+                filt = "INTERSECT"
+            elif op == "or":
+                filt = "UNION"
+            else:
+                pass
+            expr_query = f"""
+                             SELECT 
+                                 fk AS fk, 
+                                 timestamp AS timestamp
+                             FROM
+                                 ({left_query}) l
+                             {filt}
+                             SELECT
+                                 fk AS fk,
+                                 timestamp AS timestamp
+                             FROM ({right_query}) r
+                          """
+        else:
+            expr_query = self.build_condition(expr_dict, ptable_name, ppk_name)
         
-        # TODO for several conditions
-        
+        return expr_query
 
     def build_condition(self, 
-                       cond_dict : dict,
-                       ptable_name : str, 
-                       ppk_name : str) -> str:
+                        cond_dict : dict,
+                        ptable_name : str, 
+                        ppk_name : str) -> str:
         r"""
         Build a SQL query string representing a single conditional expression.
 
@@ -359,7 +375,7 @@ class PQLConverter:
         match cond_type:
             case "aggregation":
                 table_query = self.build_aggregation(cond_dict["Aggregation"], ptable_name, ppk_name)
-            case "id_dot_id":
+            case "id_dot_id": # STATIC TASK
                 table_query = self.build_id_dot_id(cond_dict, ptable_name, ppk_name)
             case _:
                 pass
@@ -415,7 +431,9 @@ class PQLConverter:
                         GROUP BY time.timestamp, tbl.{fk}"""
 
         # TODO where in aggregation
-        # where = aggr_dict["Where"] # STATIC TASK
+        where_dict = aggr_dict["Where"]
+        if where_dict:
+            where_query = self.build_where(where_dict, ptable_name, ppk_name)
 
         # TODO column_name can be "*" # DONE
         return res_query
@@ -501,34 +519,4 @@ class PQLConverter:
         table = self.db.table_dict[table_name]
 
         return table.time_col
-    
-
-    def find_for_each(self, 
-                      query_parts : list) -> dict:
-        r"""
-        Find the `for_each` clause from a parsed PQL query structure.
-
-        The function iterates over the list of query parts and returns 
-        the dictionary representing where "QType" equals "for_each".
-
-        Args
-        ----
-            `query_parts` : dict
-                List of parsed query components, each represented as a dictionary.
-
-        Returns
-        -------
-            dict
-                The dictionary corresponding to the `for_each` clause if found, otherwise `None`.
-        """
-
-        for_each_dict = None
-        for qpart in query_parts:
-            if qpart["QType"] == "for_each":
-                for_each_dict = qpart
-                break
-        
-        return for_each_dict
-
-
         
