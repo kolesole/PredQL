@@ -5,8 +5,8 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, BASE_DIR)
 
 from antlr4 import *
-from antlr4_parser.Lexer_PQL import Lexer_PQL
-from antlr4_parser.Parser_PQL import Parser_PQL
+from antlr4_parser import Lexer_PQL
+from antlr4_parser import Parser_PQL
 from pql_visitor.PQLVisitor import PQLVisitor
 from pql_converter.Converter import PQLConverter
 
@@ -41,8 +41,8 @@ def parse_query(query: str):
     return tree
 
 class ConverterShowcaseHelper:
-    def __init__(self, dataset):
-        self.pql_converter = PQLConverter(dataset.make_db())
+    def __init__(self, dataset, timestamps=None):
+        self.pql_converter = PQLConverter(dataset.make_db(), timestamps)
 
     def convert_query(self, query):
         print("========================================")

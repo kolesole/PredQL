@@ -1,9 +1,3 @@
-import sys
-import os
-
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, BASE_DIR)
-
 from antlr4_parser.Parser_PQL import Parser_PQL
 from antlr4_parser.Parser_PQLVisitor import Parser_PQLVisitor
 
