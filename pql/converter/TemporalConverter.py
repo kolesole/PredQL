@@ -9,7 +9,7 @@ from .utils import build_aggr_func
 class TPQLConverter(PQLConverter):
     def __init__(self, 
                  db : Database, 
-                 timestamps : "pd.Series[pd.Timestamp]"=None,) -> None:
+                 timestamps : "pd.Series[pd.Timestamp]"):
         r"""
         Create a PQLConverter object.
 

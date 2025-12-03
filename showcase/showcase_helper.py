@@ -1,9 +1,13 @@
+from relbench.base import Database
+
 from antlr4 import TerminalNode, InputStream, CommonTokenStream
 
 from pql.parser.Lexer_PQL import Lexer_PQL
 from pql.parser.Parser_PQL import Parser_PQL
 from pql.visitor.PQLVisitor import PQLVisitor
 from pql.converter.Converter import PQLConverter
+from pql.converter.TemporalConverter import TPQLConverter
+from pql.converter.StaticConverter import SPQLConverter
 
 def print_tree(node, parser, indent=0):
    
@@ -36,8 +40,14 @@ def parse_query(query: str):
     return tree
 
 class ConverterShowcaseHelper:
-    def __init__(self, dataset, timestamps=None):
-        self.pql_converter = PQLConverter(dataset.make_db(), timestamps)
+    pql_converter: PQLConverter
+    
+    def __init__(self, db: Database, timestamps=None):
+        
+        if timestamps is not None:
+            self.pql_converter = TPQLConverter(db, timestamps)
+        else:
+            self.pql_converter = SPQLConverter(db)
 
     def convert_query(self, query):
         print("========================================")

@@ -5,10 +5,7 @@ from .Converter import PQLConverter
 from .utils import build_aggr_func
 
 
-class SPQLConverter(PQLConverter):
-    def __init__(self, db, *args) -> None:
-        super().__init__(db)
-    
+class SPQLConverter(PQLConverter):    
     
     def convert(self, pql_query : str):
         
