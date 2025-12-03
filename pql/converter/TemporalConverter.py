@@ -1,8 +1,10 @@
-from relbench.base import *
 import pandas as pd
 
-from .utils import *
+from relbench.base import Database, Table
+
 from .Converter import PQLConverter
+from .utils import build_aggr_func
+
 
 class TPQLConverter(PQLConverter):
     def __init__(self, 

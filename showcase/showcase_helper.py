@@ -1,14 +1,9 @@
-import sys
-import os
+from antlr4 import TerminalNode, InputStream, CommonTokenStream
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, BASE_DIR)
-
-from antlr4 import *
-from antlr4_parser import Lexer_PQL
-from antlr4_parser import Parser_PQL
-from pql_visitor.PQLVisitor import PQLVisitor
-from pql_converter.Converter import PQLConverter
+from pql.parser.Lexer_PQL import Lexer_PQL
+from pql.parser.Parser_PQL import Parser_PQL
+from pql.visitor.PQLVisitor import PQLVisitor
+from pql.converter.Converter import PQLConverter
 
 def print_tree(node, parser, indent=0):
    

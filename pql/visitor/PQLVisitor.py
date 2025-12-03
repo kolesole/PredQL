@@ -1,5 +1,5 @@
-from antlr4_parser.Parser_PQL import Parser_PQL
-from antlr4_parser.Parser_PQLVisitor import Parser_PQLVisitor
+from pql.parser.Parser_PQL import Parser_PQL
+from pql.parser.Parser_PQLVisitor import Parser_PQLVisitor
 
 class PQLVisitor(Parser_PQLVisitor):
     # Visit a parse tree produced by Parser_PQL#query.
