@@ -1,33 +1,22 @@
-import pandas as pd
-import duckdb
 from abc import abstractmethod
-from relbench.base import *
-from antlr4 import *
-from antlr4_parser.Lexer_PQL import Lexer_PQL
-from antlr4_parser.Parser_PQL import Parser_PQL 
 
-from pql_visitor.PQLVisitor import PQLVisitor
+import duckdb
 
-from .utils import *
+from relbench.base import Database
+
+from antlr4 import InputStream, CommonTokenStream
+
+from pql.parser.Lexer_PQL import Lexer_PQL
+from pql.parser.Parser_PQL import Parser_PQL 
+from pql.visitor.PQLVisitor import PQLVisitor
+
+from .utils import build_num_condition, build_str_condition, build_null_condition
 
 
-class PQLConverter:
-    def __new__(cls, db, timestamps=None):
-        if cls is PQLConverter:
-            if timestamps is not None:
-                from .TemporalConverter import TPQLConverter
-                instance = object.__new__(TPQLConverter)
-            else:
-                from .StaticConverter import SPQLConverter
-                instance = object.__new__(SPQLConverter)
-            return instance
-        else:
-            return object.__new__(cls)
+class PQLConverter:   
     
-    
-    def __init__(self, db, timestamps=None) -> None:
+    def __init__(self, db: Database) -> None:
         self.db = db
-
         self.pql_visitor = PQLVisitor()
         self.conn = duckdb.connect()
         for name, table in db.table_dict.items():

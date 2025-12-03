@@ -1,14 +1,11 @@
-from relbench.base import *
+from relbench.base import Table
 
-from .utils import *
 from .Converter import PQLConverter
-from pql_visitor.PQLVisitor import PQLVisitor
+
+from .utils import build_aggr_func
 
 
-class SPQLConverter(PQLConverter):
-    def __init__(self, db, *args) -> None:
-        super().__init__(db)
-    
+class SPQLConverter(PQLConverter):    
     
     def convert(self, pql_query : str):
         

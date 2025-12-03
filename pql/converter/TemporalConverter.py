@@ -1,13 +1,15 @@
-from relbench.base import *
 import pandas as pd
 
-from .utils import *
+from relbench.base import Database, Table
+
 from .Converter import PQLConverter
+from .utils import build_aggr_func
+
 
 class TPQLConverter(PQLConverter):
     def __init__(self, 
                  db : Database, 
-                 timestamps : "pd.Series[pd.Timestamp]"=None,) -> None:
+                 timestamps : "pd.Series[pd.Timestamp]"):
         r"""
         Create a PQLConverter object.
 
@@ -27,7 +29,7 @@ class TPQLConverter(PQLConverter):
                 If not provided.
         """
 
-        super().__init__(db, timestamps)
+        super().__init__(db)
                 
         self.timestamps = timestamps
         timestamp_df = pd.DataFrame({"timestamp" : self.timestamps})
