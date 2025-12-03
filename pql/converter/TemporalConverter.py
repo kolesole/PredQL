@@ -29,7 +29,7 @@ class TPQLConverter(PQLConverter):
                 If not provided.
         """
 
-        super().__init__(db, timestamps)
+        super().__init__(db)
                 
         self.timestamps = timestamps
         timestamp_df = pd.DataFrame({"timestamp" : self.timestamps})
