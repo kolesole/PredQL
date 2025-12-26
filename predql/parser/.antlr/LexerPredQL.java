@@ -1,4 +1,4 @@
-// Generated from /home/kolesiko/CTU/BT/PQL/pql/parser/LexerPQL.g4 by ANTLR 4.13.1
+// Generated from /home/kolesiko/CTU/BT/PredQL/predql/parser/LexerPredQL.g4 by ANTLR 4.13.1
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
@@ -9,7 +9,7 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast", "CheckReturnValue", "this-escape"})
-public class LexerPQL extends Lexer {
+public class LexerPredQL extends Lexer {
 	static { RuntimeMetaData.checkVersion("4.13.1", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
@@ -99,13 +99,13 @@ public class LexerPQL extends Lexer {
 	}
 
 
-	public LexerPQL(CharStream input) {
+	public LexerPredQL(CharStream input) {
 		super(input);
 		_interp = new LexerATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
 	@Override
-	public String getGrammarFileName() { return "LexerPQL.g4"; }
+	public String getGrammarFileName() { return "LexerPredQL.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }

@@ -6,12 +6,12 @@
 source .venv/bin/activate
 
 # Navigate to grammar directory
-cd pql/parser
+cd predql/parser
 
 mkdir -p gen
 
 # Regenerate parser files using Python module directly
-python -c "
+python3 -c "
 from antlr4_tool_runner import tool; 
 import sys; 
 sys.argv = [
@@ -19,8 +19,8 @@ sys.argv = [
     '-Dlanguage=Python3', 
     '-visitor', 
     '-o', 'gen',
-    'ParserPQL.g4', 
-    'LexerPQL.g4'
+    'ParserPredQL.g4', 
+    'LexerPredQL.g4'
 ]; 
 tool()
 "

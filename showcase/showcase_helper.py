@@ -2,9 +2,9 @@ from relbench.base import Database
 
 from antlr4 import TerminalNode, InputStream, CommonTokenStream
 
-from pql.parser import LexerPQL, ParserPQL
-from pql.visitor import VisitorPQL
-from pql.converter import ConverterPQL, SConverterPQL, TConverterPQL 
+from predql.parser import LexerPredQL, ParserPredQL
+from predql.visitor import VisitorPredQL
+from predql.converter import ConverterPredQL, SConverterPredQL, TConverterPredQL 
 
 def print_tree(node, parser):
    
@@ -20,9 +20,9 @@ def print_tree(node, parser):
 
 def parse_query(query: str):
     input_stream = InputStream(query)
-    lexer = LexerPQL(input_stream)
+    lexer = LexerPredQL(input_stream)
     token_stream = CommonTokenStream(lexer)
-    parser = ParserPQL(token_stream)
+    parser = ParserPredQL(token_stream)
 
     tree = parser.query()
     
@@ -30,26 +30,26 @@ def parse_query(query: str):
     print(query)
     print("=== Parse Tree ===")
     print_tree(tree, parser)
-    visitor = VisitorPQL()
+    visitor = VisitorPredQL()
     print(visitor.visit(tree))
     print("==================")
 
     return tree
 
 class ConverterShowcaseHelper:
-    pql_converter: ConverterPQL
+    predql_converter: ConverterPredQL
     
     def __init__(self, db: Database, timestamps=None):
         
         if timestamps is not None:
-            self.pql_converter = TConverterPQL(db, timestamps)
+            self.predql_converter = TConverterPredQL(db, timestamps)
         else:
-            self.pql_converter = SConverterPQL(db)
+            self.predql_converter = SConverterPredQL(db)
 
     def convert_query(self, query):
         print("========================================")
         print(query)
-        table = self.pql_converter.convert(query)
+        table = self.predql_converter.convert(query)
         print(table)
         print("========================================")
 

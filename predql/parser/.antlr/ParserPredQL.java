@@ -1,4 +1,4 @@
-// Generated from /home/kolesiko/CTU/BT/PQL/pql/parser/ParserPQL.g4 by ANTLR 4.13.1
+// Generated from /home/kolesiko/CTU/BT/PredQL/predql/parser/ParserPredQL.g4 by ANTLR 4.13.1
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast", "CheckReturnValue"})
-public class ParserPQL extends Parser {
+public class ParserPredQL extends Parser {
 	static { RuntimeMetaData.checkVersion("4.13.1", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
@@ -91,7 +91,7 @@ public class ParserPQL extends Parser {
 	}
 
 	@Override
-	public String getGrammarFileName() { return "ParserPQL.g4"; }
+	public String getGrammarFileName() { return "ParserPredQL.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
@@ -102,7 +102,7 @@ public class ParserPQL extends Parser {
 	@Override
 	public ATN getATN() { return _ATN; }
 
-	public ParserPQL(TokenStream input) {
+	public ParserPredQL(TokenStream input) {
 		super(input);
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
@@ -115,7 +115,7 @@ public class ParserPQL extends Parser {
 		public For_eachContext for_each() {
 			return getRuleContext(For_eachContext.class,0);
 		}
-		public TerminalNode SEMI_COLUMN() { return getToken(ParserPQL.SEMI_COLUMN, 0); }
+		public TerminalNode SEMI_COLUMN() { return getToken(ParserPredQL.SEMI_COLUMN, 0); }
 		public AssumingContext assuming() {
 			return getRuleContext(AssumingContext.class,0);
 		}
@@ -176,7 +176,7 @@ public class ParserPQL extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class AssumingContext extends ParserRuleContext {
-		public TerminalNode ASSUMING() { return getToken(ParserPQL.ASSUMING, 0); }
+		public TerminalNode ASSUMING() { return getToken(ParserPredQL.ASSUMING, 0); }
 		public Expr_orContext expr_or() {
 			return getRuleContext(Expr_orContext.class,0);
 		}
@@ -211,12 +211,12 @@ public class ParserPQL extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class For_eachContext extends ParserRuleContext {
-		public TerminalNode FOR_EACH() { return getToken(ParserPQL.FOR_EACH, 0); }
-		public List<TerminalNode> ID() { return getTokens(ParserPQL.ID); }
+		public TerminalNode FOR_EACH() { return getToken(ParserPredQL.FOR_EACH, 0); }
+		public List<TerminalNode> ID() { return getTokens(ParserPredQL.ID); }
 		public TerminalNode ID(int i) {
-			return getToken(ParserPQL.ID, i);
+			return getToken(ParserPredQL.ID, i);
 		}
-		public TerminalNode DOT() { return getToken(ParserPQL.DOT, 0); }
+		public TerminalNode DOT() { return getToken(ParserPredQL.DOT, 0); }
 		public WhereContext where() {
 			return getRuleContext(WhereContext.class,0);
 		}
@@ -265,22 +265,22 @@ public class ParserPQL extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class PredictContext extends ParserRuleContext {
-		public TerminalNode PREDICT() { return getToken(ParserPQL.PREDICT, 0); }
+		public TerminalNode PREDICT() { return getToken(ParserPredQL.PREDICT, 0); }
 		public AggregationContext aggregation() {
 			return getRuleContext(AggregationContext.class,0);
 		}
-		public TerminalNode RANK_TOP() { return getToken(ParserPQL.RANK_TOP, 0); }
-		public TerminalNode INT() { return getToken(ParserPQL.INT, 0); }
-		public TerminalNode CLASSIFY() { return getToken(ParserPQL.CLASSIFY, 0); }
+		public TerminalNode RANK_TOP() { return getToken(ParserPredQL.RANK_TOP, 0); }
+		public TerminalNode INT() { return getToken(ParserPredQL.INT, 0); }
+		public TerminalNode CLASSIFY() { return getToken(ParserPredQL.CLASSIFY, 0); }
 		public Expr_orContext expr_or() {
 			return getRuleContext(Expr_orContext.class,0);
 		}
-		public List<TerminalNode> ID() { return getTokens(ParserPQL.ID); }
+		public List<TerminalNode> ID() { return getTokens(ParserPredQL.ID); }
 		public TerminalNode ID(int i) {
-			return getToken(ParserPQL.ID, i);
+			return getToken(ParserPredQL.ID, i);
 		}
-		public TerminalNode DOT() { return getToken(ParserPQL.DOT, 0); }
-		public TerminalNode STAR() { return getToken(ParserPQL.STAR, 0); }
+		public TerminalNode DOT() { return getToken(ParserPredQL.DOT, 0); }
+		public TerminalNode STAR() { return getToken(ParserPredQL.STAR, 0); }
 		public PredictContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -393,7 +393,7 @@ public class ParserPQL extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class WhereContext extends ParserRuleContext {
-		public TerminalNode WHERE() { return getToken(ParserPQL.WHERE, 0); }
+		public TerminalNode WHERE() { return getToken(ParserPredQL.WHERE, 0); }
 		public Expr_orContext expr_or() {
 			return getRuleContext(Expr_orContext.class,0);
 		}
@@ -434,9 +434,9 @@ public class ParserPQL extends Parser {
 		public Expr_andContext expr_and(int i) {
 			return getRuleContext(Expr_andContext.class,i);
 		}
-		public List<TerminalNode> OR() { return getTokens(ParserPQL.OR); }
+		public List<TerminalNode> OR() { return getTokens(ParserPredQL.OR); }
 		public TerminalNode OR(int i) {
-			return getToken(ParserPQL.OR, i);
+			return getToken(ParserPredQL.OR, i);
 		}
 		public Expr_orContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -490,9 +490,9 @@ public class ParserPQL extends Parser {
 		public Expr_termContext expr_term(int i) {
 			return getRuleContext(Expr_termContext.class,i);
 		}
-		public List<TerminalNode> AND() { return getTokens(ParserPQL.AND); }
+		public List<TerminalNode> AND() { return getTokens(ParserPredQL.AND); }
 		public TerminalNode AND(int i) {
-			return getToken(ParserPQL.AND, i);
+			return getToken(ParserPredQL.AND, i);
 		}
 		public Expr_andContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -543,11 +543,11 @@ public class ParserPQL extends Parser {
 		public ConditionContext condition() {
 			return getRuleContext(ConditionContext.class,0);
 		}
-		public TerminalNode OPEN_PAREN() { return getToken(ParserPQL.OPEN_PAREN, 0); }
+		public TerminalNode OPEN_PAREN() { return getToken(ParserPredQL.OPEN_PAREN, 0); }
 		public Expr_orContext expr_or() {
 			return getRuleContext(Expr_orContext.class,0);
 		}
-		public TerminalNode CLOSE_PAREN() { return getToken(ParserPQL.CLOSE_PAREN, 0); }
+		public TerminalNode CLOSE_PAREN() { return getToken(ParserPredQL.CLOSE_PAREN, 0); }
 		public Expr_termContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -601,11 +601,11 @@ public class ParserPQL extends Parser {
 		public AggregationContext aggregation() {
 			return getRuleContext(AggregationContext.class,0);
 		}
-		public List<TerminalNode> ID() { return getTokens(ParserPQL.ID); }
+		public List<TerminalNode> ID() { return getTokens(ParserPredQL.ID); }
 		public TerminalNode ID(int i) {
-			return getToken(ParserPQL.ID, i);
+			return getToken(ParserPredQL.ID, i);
 		}
-		public TerminalNode DOT() { return getToken(ParserPQL.DOT, 0); }
+		public TerminalNode DOT() { return getToken(ParserPredQL.DOT, 0); }
 		public Num_conditionContext num_condition() {
 			return getRuleContext(Num_conditionContext.class,0);
 		}
@@ -615,8 +615,8 @@ public class ParserPQL extends Parser {
 		public Null_check_conditionContext null_check_condition() {
 			return getRuleContext(Null_check_conditionContext.class,0);
 		}
-		public TerminalNode NOT() { return getToken(ParserPQL.NOT, 0); }
-		public TerminalNode STAR() { return getToken(ParserPQL.STAR, 0); }
+		public TerminalNode NOT() { return getToken(ParserPredQL.NOT, 0); }
+		public TerminalNode STAR() { return getToken(ParserPredQL.STAR, 0); }
 		public ConditionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -709,10 +709,10 @@ public class ParserPQL extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class Num_conditionContext extends ParserRuleContext {
-		public TerminalNode NUM_COMP_OP() { return getToken(ParserPQL.NUM_COMP_OP, 0); }
-		public TerminalNode DATETIME() { return getToken(ParserPQL.DATETIME, 0); }
-		public TerminalNode FLOAT() { return getToken(ParserPQL.FLOAT, 0); }
-		public TerminalNode INT() { return getToken(ParserPQL.INT, 0); }
+		public TerminalNode NUM_COMP_OP() { return getToken(ParserPredQL.NUM_COMP_OP, 0); }
+		public TerminalNode DATETIME() { return getToken(ParserPredQL.DATETIME, 0); }
+		public TerminalNode FLOAT() { return getToken(ParserPredQL.FLOAT, 0); }
+		public TerminalNode INT() { return getToken(ParserPredQL.INT, 0); }
 		public Num_conditionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -753,8 +753,8 @@ public class ParserPQL extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class Str_conditionContext extends ParserRuleContext {
-		public TerminalNode STR_COMP_OP() { return getToken(ParserPQL.STR_COMP_OP, 0); }
-		public TerminalNode STRING() { return getToken(ParserPQL.STRING, 0); }
+		public TerminalNode STR_COMP_OP() { return getToken(ParserPredQL.STR_COMP_OP, 0); }
+		public TerminalNode STRING() { return getToken(ParserPredQL.STRING, 0); }
 		public Str_conditionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -786,7 +786,7 @@ public class ParserPQL extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class Null_check_conditionContext extends ParserRuleContext {
-		public TerminalNode NULL_CHECK_OP() { return getToken(ParserPQL.NULL_CHECK_OP, 0); }
+		public TerminalNode NULL_CHECK_OP() { return getToken(ParserPredQL.NULL_CHECK_OP, 0); }
 		public Null_check_conditionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -816,27 +816,27 @@ public class ParserPQL extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class AggregationContext extends ParserRuleContext {
-		public TerminalNode AGGR_FUNC() { return getToken(ParserPQL.AGGR_FUNC, 0); }
-		public TerminalNode OPEN_PAREN() { return getToken(ParserPQL.OPEN_PAREN, 0); }
-		public List<TerminalNode> ID() { return getTokens(ParserPQL.ID); }
+		public TerminalNode AGGR_FUNC() { return getToken(ParserPredQL.AGGR_FUNC, 0); }
+		public TerminalNode OPEN_PAREN() { return getToken(ParserPredQL.OPEN_PAREN, 0); }
+		public List<TerminalNode> ID() { return getTokens(ParserPredQL.ID); }
 		public TerminalNode ID(int i) {
-			return getToken(ParserPQL.ID, i);
+			return getToken(ParserPredQL.ID, i);
 		}
-		public TerminalNode DOT() { return getToken(ParserPQL.DOT, 0); }
-		public TerminalNode CLOSE_PAREN() { return getToken(ParserPQL.CLOSE_PAREN, 0); }
-		public TerminalNode STAR() { return getToken(ParserPQL.STAR, 0); }
+		public TerminalNode DOT() { return getToken(ParserPredQL.DOT, 0); }
+		public TerminalNode CLOSE_PAREN() { return getToken(ParserPredQL.CLOSE_PAREN, 0); }
+		public TerminalNode STAR() { return getToken(ParserPredQL.STAR, 0); }
 		public WhereContext where() {
 			return getRuleContext(WhereContext.class,0);
 		}
-		public List<TerminalNode> COMMA() { return getTokens(ParserPQL.COMMA); }
+		public List<TerminalNode> COMMA() { return getTokens(ParserPredQL.COMMA); }
 		public TerminalNode COMMA(int i) {
-			return getToken(ParserPQL.COMMA, i);
+			return getToken(ParserPredQL.COMMA, i);
 		}
-		public List<TerminalNode> INT() { return getTokens(ParserPQL.INT); }
+		public List<TerminalNode> INT() { return getTokens(ParserPredQL.INT); }
 		public TerminalNode INT(int i) {
-			return getToken(ParserPQL.INT, i);
+			return getToken(ParserPredQL.INT, i);
 		}
-		public TerminalNode TIME_MEASURE_UNIT() { return getToken(ParserPQL.TIME_MEASURE_UNIT, 0); }
+		public TerminalNode TIME_MEASURE_UNIT() { return getToken(ParserPredQL.TIME_MEASURE_UNIT, 0); }
 		public AggregationContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}

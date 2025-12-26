@@ -2,38 +2,38 @@ import textwrap
 
 from relbench.base import Table
 
-from pql.converter.converter import ConverterPQL
+from predql.converter.converter import ConverterPredQL
 
-from pql.converter.utils import build_aggr_func, get_div_line, get_indent
+from predql.converter.utils import build_aggr_func, get_div_line, get_indent
 
 
-class SConverterPQL(ConverterPQL):
+class SConverterPredQL(ConverterPredQL):
     r"""
-    Static PQL converter class for static conversion PQL -> SQL.
+    Static PredQL converter class for static conversion PredQL -> SQL.
     
-    Converts static (non-temporal) PQL queries into SQL queries.\
-    Extends the base ConverterPQL class with concrete implementations\
+    Converts static (non-temporal) PredQL queries into SQL queries.\
+    Extends the base ConverterPredQL class with concrete implementations\
     for static prediction tasks.
     """    
 
     def convert(self, 
-                pql_query : str,
-                indent    : int=0) -> Table:
+                predql_query : str,
+                indent       : int=0) -> Table:
         r"""
-        Converts the static PQL query string into an executable SQL query\ 
+        Converts the static PredQL query string into an executable SQL query\ 
         and returns the result as a *`Table`* object.
 
         Args:
-            `pql_query` (`str`): The PQL query string to be converted and executed.
+            `predql_query` (`str`): The PredQL query string to be converted and executed.
             `indent` (`int`, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
             `out` (`Table`): The *`Table`* object containing the result of the executed SQL query,\
-                    with columns (*fk*, *label*) corresponding to the translated PQL query output.
+                    with columns (*fk*, *label*) corresponding to the translated PredQL query output.
         """
         
-        # parse PQL query into dictionary
-        query_dict = self.parse_query(pql_query)
+        # parse PredQL query into dictionary
+        query_dict = self.parse_query(predql_query)
 
         # check FOR EACH
         for_each_dict = query_dict["ForEach"]

@@ -4,17 +4,17 @@ import textwrap
 
 from relbench.base import Database, Table
 
-from pql.converter.converter import ConverterPQL
+from predql.converter.converter import ConverterPredQL
 
-from pql.converter.utils import build_aggr_func, get_div_line, get_indent
+from predql.converter.utils import build_aggr_func, get_div_line, get_indent
 
 
-class TConverterPQL(ConverterPQL):
+class TConverterPredQL(ConverterPredQL):
     r"""
-    Temporal PQL converter class for temporal conversion PQL -> SQL.
+    Temporal PredQL converter class for temporal conversion PredQL -> SQL.
     
-    Converts temporal (time-series) PQL queries into SQL queries.\
-    Extends the base ConverterPQL class with concrete implementations\
+    Converts temporal (time-series) PredQL queries into SQL queries.\
+    Extends the base ConverterPredQL class with concrete implementations\
     for temporal prediction tasks with time window support.
     """
 
@@ -22,7 +22,7 @@ class TConverterPQL(ConverterPQL):
                  db         : Database, 
                  timestamps : "pd.Series[pd.Timestamp]") -> None:
         r"""
-        Initializes a temporal PQL converter with timestamp support.
+        Initializes a temporal PredQL converter with timestamp support.
 
         Args:
             `db` (`Database`): Database object containing the tables.
@@ -43,23 +43,23 @@ class TConverterPQL(ConverterPQL):
     
 
     def convert(self, 
-                pql_query : str,
-                indent    : int=0) -> Table:
+                predql_query : str,
+                indent       : int=0) -> Table:
         r"""
-        Converts the temporal PQL query string into an executable SQL query\ 
+        Converts the temporal PredQL query string into an executable SQL query\ 
         and returns the result as a *`Table`* object.
 
         Args:
-            `pql_query` (`str`): The PQL query string to be converted and executed.
+            `predql_query` (`str`): The PredQL query string to be converted and executed.
             `indent` (`int`, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
             `out` (`Table`): The *`Table`* object containing the result of the executed SQL query,\
-                    with columns (*fk*, *timestamp*, *label*) corresponding to the translated PQL query output.
+                    with columns (*fk*, *timestamp*, *label*) corresponding to the translated PredQL query output.
         """
         
-        # parse PQL query into dictionary
-        query_dict = self.parse_query(pql_query)
+        # parse PredQL query into dictionary
+        query_dict = self.parse_query(predql_query)
         
         # check FOR EACH
         for_each_dict = query_dict["ForEach"]
@@ -388,7 +388,7 @@ class TConverterPQL(ConverterPQL):
                           ppk       : str,
                           indent    : int=0) -> str:
         r"""
-        Builds the SQL query for a PQL aggregation over a time window.
+        Builds the SQL query for a PredQL aggregation over a time window.
 
         Computes aggregations relative to prediction timestamps within a defined
         `[start, end)` time window.

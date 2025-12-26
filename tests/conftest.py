@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from relbench.base import Database, Table
-from pql.converter import TConverterPQL, SConverterPQL
+from predql.converter import TConverterPredQL, SConverterPredQL
 
 @pytest.fixture(scope="session")
 def test_db():
@@ -77,8 +77,8 @@ def temporal_converter(test_db):
     timestamps = pd.to_datetime(["2025-01-01", "2025-01-15"])
     timestamps = pd.Series(timestamps)
 
-    return TConverterPQL(db=test_db, timestamps=timestamps)
+    return TConverterPredQL(db=test_db, timestamps=timestamps)
 
 @pytest.fixture(scope="session")
 def static_converter(test_db):
-    return SConverterPQL(db=test_db)
+    return SConverterPredQL(db=test_db)

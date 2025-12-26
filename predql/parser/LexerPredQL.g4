@@ -1,8 +1,8 @@
 /**
- * Lexer for PQL (Predictive Query Language)
- * Defines all tokens used in the PQL grammar
+ * Lexer for PredQL (Predictive Query Language)
+ * Defines all tokens used in the PredQL grammar
  */
-lexer grammar LexerPQL ;
+lexer grammar LexerPredQL ;
 
 // ============================================================================
 // MAIN FUNCTION KEYWORDS

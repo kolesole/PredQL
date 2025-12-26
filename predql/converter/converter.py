@@ -8,18 +8,18 @@ from relbench.base import Database, Table
 
 from antlr4 import InputStream, CommonTokenStream
 
-from pql.parser.gen.LexerPQL import LexerPQL
-from pql.parser.gen.ParserPQL import ParserPQL
-from pql.visitor.visitor_pql import VisitorPQL
+from predql.parser.gen.LexerPredQL import LexerPredQL
+from predql.parser.gen.ParserPredQL import ParserPredQL
+from predql.visitor.visitor_predql import VisitorPredQL
 
-from pql.converter.utils import build_num_condition, build_str_condition, build_null_condition, get_div_line, get_indent
+from predql.converter.utils import build_num_condition, build_str_condition, build_null_condition, get_div_line, get_indent
 
 
-class ConverterPQL:   
+class ConverterPredQL:   
     r"""
-    Base PQL converter class for conversion PQL -> SQL.
+    Base PredQL converter class for conversion PredQL -> SQL.
     
-    Provides shared functionality for temporal and static PQL converters.\
+    Provides shared functionality for temporal and static PredQL converters.\
     Some methods are astract and must be implemented by concrete subclasses,\
     but others provide common logic used in both static and temporal conversion.
     """
@@ -29,7 +29,7 @@ class ConverterPQL:
         r"""
         Base constructor.
 
-        Initializes *`Database`* instance, *`DuckDB`* connection, *`VisitorPQL`* instance and\
+        Initializes *`Database`* instance, *`DuckDB`* connection, *`VisitorPredQL`* instance and\
         registers all database tables in *`DuckDB`* connection.  
 
         Args:
@@ -40,7 +40,7 @@ class ConverterPQL:
         """
 
         self.db = db
-        self.pql_visitor = VisitorPQL()
+        self.predql_visitor = VisitorPredQL()
         self.conn = duckdb.connect()
         # register all tables in DuckDB connection
         for name, table in db.table_dict.items():
@@ -49,8 +49,8 @@ class ConverterPQL:
     
     @abstractmethod
     def convert(self, 
-                pql_query : str,
-                indent    : int=0) -> Table:
+                predql_query : str,
+                indent       : int=0) -> Table:
         r"""
         Abstract conversion method.\
         Main entry point.
@@ -70,7 +70,7 @@ class ConverterPQL:
                       for_each_query : str,
                       indent         : int=0) -> str:
         r"""
-        Abstract method to build the SQL query for the predict part of the PQL query.
+        Abstract method to build the SQL query for the predict part of the PredQL query.
 
         Note: 
             For explanation of the building process, see concrete subclasses.
@@ -86,7 +86,7 @@ class ConverterPQL:
                     ppk       : str,
                     indent    : int=0) -> str:
         r"""
-        Abstract method to build the SQL query for the expression part of the PQL query.
+        Abstract method to build the SQL query for the expression part of the PredQL query.
 
         Note: 
             For explanation of the building process, see concrete subclasses.
@@ -102,7 +102,7 @@ class ConverterPQL:
                           ppk       : str,
                           indent    : int=0) -> str:
         r"""
-        Abstract method to build the SQL query for the aggregation part of the PQL query.
+        Abstract method to build the SQL query for the aggregation part of the PredQL query.
 
         Note: 
             For explanation of the building process, see concrete subclasses.
@@ -112,25 +112,25 @@ class ConverterPQL:
         
     
     def parse_query(self, 
-                    pql_query : str) -> dict:
+                    predql_query : str) -> dict:
         r"""
-        Parses the PQL query string into a dictionary representation.
+        Parses the PredQL query string into a dictionary representation.
 
         Args:
-            `pql_query` (`str`): The PQL query string to be parsed.
+            `pql_query` (`str`): The PredQL query string to be parsed.
         
         Returns:
-            `query_dict` (`dict`): Dictionary representation of the parsed PQL query.
+            `query_dict` (`dict`): Dictionary representation of the parsed PredQL query.
         """
         
-        input_stream = InputStream(pql_query)
-        lexer = LexerPQL(input_stream)
+        input_stream = InputStream(predql_query)
+        lexer = LexerPredQL(input_stream)
         token_stream = CommonTokenStream(lexer)
         
-        parser = ParserPQL(token_stream)
+        parser = ParserPredQL(token_stream)
         tree = parser.query()
 
-        query_dict = self.pql_visitor.visit(tree)
+        query_dict = self.predql_visitor.visit(tree)
         return query_dict 
     
 
@@ -140,16 +140,16 @@ class ConverterPQL:
                         ppk       : str,
                         indent    : int=0) -> str:
         r"""
-        Builds the SQL query for a condition part of the PQL query.
+        Builds the SQL query for a condition part of the PredQL query.
 
         Args:
-            `cond_dict` (`dict`): Dictionary representation of the condition part of the PQL query.
+            `cond_dict` (`dict`): Dictionary representation of the condition part of the PredQL query.
             `ptable` (`str`): Name of the parent table.
             `ppk` (`str`): Name of the primary key column in the parent table.
             `indent` (`int`, optional): Indentation level for formatting the SQL query, default is 0.
 
         Returns:
-            `res_query` (`str`): SQL query string representing the condition part of the PQL query.   
+            `res_query` (`str`): SQL query string representing the condition part of the PredQL query.   
         """
 
         # check condition type and build main query for condition accordingly
@@ -209,7 +209,7 @@ class ConverterPQL:
                         ppk       : str,
                         indent    : int=0) -> str:
         r"""
-        Builds the SQL query for a table.column(id_dot_id) part of the PQL query.
+        Builds the SQL query for a table.column(id_dot_id) part of the PredQL query.
 
         Args:
             `some_dict` (`dict`): Dictionary containing 'Table', 'Column' keys.
@@ -218,7 +218,7 @@ class ConverterPQL:
             `indent` (`int`, optional): Indentation level for formatting the SQL query, default is 0.
 
         Returns:
-            `res_query` (`str`): SQL query string representing the id_dot_id part of the PQL query.   
+            `res_query` (`str`): SQL query string representing the id_dot_id part of the PredQL query.   
         """
         
         table = some_dict["Table"]
@@ -264,7 +264,7 @@ class ConverterPQL:
             `out` (`str`): Name of the foreign key column in the child table.   
         """
 
-        # if child and parent table are the same, return primary key
+        # if child and parent table are the same -> return primary key
         if ctable == ptable:
             return ppk
         

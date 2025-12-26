@@ -1,10 +1,10 @@
 /**
- * Parser for PQL (Predictive Query Language)
- * Defines the syntax rules for valid PQL queries
+ * Parser for PredQL (Predictive Query Language)
+ * Defines the syntax rules for valid PredQL queries
  */
-parser grammar ParserPQL ;
+parser grammar ParserPredQL ;
 
-options { tokenVocab=LexerPQL; }    // Import tokens from the lexer grammar
+options { tokenVocab=LexerPredQL; }    // Import tokens from the lexer grammar
 
 // ============================================================================
 // MAIN QUERY RULE
