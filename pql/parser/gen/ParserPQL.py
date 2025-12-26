@@ -1,4 +1,4 @@
-# Generated from Parser_PQL.g4 by ANTLR 4.13.2
+# Generated from ParserPQL.g4 by ANTLR 4.13.2
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
@@ -31,7 +31,7 @@ def serializedATN():
         42,5,34,0,0,42,44,5,42,0,0,43,45,3,8,4,0,44,43,1,0,0,0,44,45,1,0,
         0,0,45,5,1,0,0,0,46,47,5,3,0,0,47,51,3,24,12,0,48,49,5,6,0,0,49,
         52,5,33,0,0,50,52,5,5,0,0,51,48,1,0,0,0,51,50,1,0,0,0,51,52,1,0,
-        0,0,52,70,1,0,0,0,53,54,5,3,0,0,54,58,3,16,8,0,55,56,5,6,0,0,56,
+        0,0,52,70,1,0,0,0,53,54,5,3,0,0,54,58,3,10,5,0,55,56,5,6,0,0,56,
         59,5,33,0,0,57,59,5,5,0,0,58,55,1,0,0,0,58,57,1,0,0,0,58,59,1,0,
         0,0,59,70,1,0,0,0,60,61,5,3,0,0,61,62,5,42,0,0,62,63,5,34,0,0,63,
         67,7,0,0,0,64,65,5,6,0,0,65,68,5,33,0,0,66,68,5,5,0,0,67,64,1,0,
@@ -59,9 +59,9 @@ def serializedATN():
         133,135
     ]
 
-class Parser_PQL ( Parser ):
+class ParserPQL ( Parser ):
 
-    grammarFileName = "Parser_PQL.g4"
+    grammarFileName = "ParserPQL.g4"
 
     atn = ATNDeserializer().deserialize(serializedATN())
 
@@ -172,26 +172,26 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def predict(self):
-            return self.getTypedRuleContext(Parser_PQL.PredictContext,0)
+            return self.getTypedRuleContext(ParserPQL.PredictContext,0)
 
 
         def for_each(self):
-            return self.getTypedRuleContext(Parser_PQL.For_eachContext,0)
+            return self.getTypedRuleContext(ParserPQL.For_eachContext,0)
 
 
         def SEMI_COLUMN(self):
-            return self.getToken(Parser_PQL.SEMI_COLUMN, 0)
+            return self.getToken(ParserPQL.SEMI_COLUMN, 0)
 
         def assuming(self):
-            return self.getTypedRuleContext(Parser_PQL.AssumingContext,0)
+            return self.getTypedRuleContext(ParserPQL.AssumingContext,0)
 
 
         def where(self):
-            return self.getTypedRuleContext(Parser_PQL.WhereContext,0)
+            return self.getTypedRuleContext(ParserPQL.WhereContext,0)
 
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_query
+            return ParserPQL.RULE_query
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterQuery" ):
@@ -212,7 +212,7 @@ class Parser_PQL ( Parser ):
 
     def query(self):
 
-        localctx = Parser_PQL.QueryContext(self, self._ctx, self.state)
+        localctx = ParserPQL.QueryContext(self, self._ctx, self.state)
         self.enterRule(localctx, 0, self.RULE_query)
         self._la = 0 # Token type
         try:
@@ -238,7 +238,7 @@ class Parser_PQL ( Parser ):
 
 
             self.state = 34
-            self.match(Parser_PQL.SEMI_COLUMN)
+            self.match(ParserPQL.SEMI_COLUMN)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -256,14 +256,14 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def ASSUMING(self):
-            return self.getToken(Parser_PQL.ASSUMING, 0)
+            return self.getToken(ParserPQL.ASSUMING, 0)
 
         def expr_or(self):
-            return self.getTypedRuleContext(Parser_PQL.Expr_orContext,0)
+            return self.getTypedRuleContext(ParserPQL.Expr_orContext,0)
 
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_assuming
+            return ParserPQL.RULE_assuming
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterAssuming" ):
@@ -284,12 +284,12 @@ class Parser_PQL ( Parser ):
 
     def assuming(self):
 
-        localctx = Parser_PQL.AssumingContext(self, self._ctx, self.state)
+        localctx = ParserPQL.AssumingContext(self, self._ctx, self.state)
         self.enterRule(localctx, 2, self.RULE_assuming)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 36
-            self.match(Parser_PQL.ASSUMING)
+            self.match(ParserPQL.ASSUMING)
             self.state = 37
             self.expr_or()
         except RecognitionException as re:
@@ -309,23 +309,23 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def FOR_EACH(self):
-            return self.getToken(Parser_PQL.FOR_EACH, 0)
+            return self.getToken(ParserPQL.FOR_EACH, 0)
 
         def ID(self, i:int=None):
             if i is None:
-                return self.getTokens(Parser_PQL.ID)
+                return self.getTokens(ParserPQL.ID)
             else:
-                return self.getToken(Parser_PQL.ID, i)
+                return self.getToken(ParserPQL.ID, i)
 
         def DOT(self):
-            return self.getToken(Parser_PQL.DOT, 0)
+            return self.getToken(ParserPQL.DOT, 0)
 
         def where(self):
-            return self.getTypedRuleContext(Parser_PQL.WhereContext,0)
+            return self.getTypedRuleContext(ParserPQL.WhereContext,0)
 
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_for_each
+            return ParserPQL.RULE_for_each
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterFor_each" ):
@@ -346,18 +346,18 @@ class Parser_PQL ( Parser ):
 
     def for_each(self):
 
-        localctx = Parser_PQL.For_eachContext(self, self._ctx, self.state)
+        localctx = ParserPQL.For_eachContext(self, self._ctx, self.state)
         self.enterRule(localctx, 4, self.RULE_for_each)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 39
-            self.match(Parser_PQL.FOR_EACH)
+            self.match(ParserPQL.FOR_EACH)
             self.state = 40
-            self.match(Parser_PQL.ID)
+            self.match(ParserPQL.ID)
             self.state = 41
-            self.match(Parser_PQL.DOT)
+            self.match(ParserPQL.DOT)
             self.state = 42
-            self.match(Parser_PQL.ID)
+            self.match(ParserPQL.ID)
             self.state = 44
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,2,self._ctx)
@@ -383,39 +383,39 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def PREDICT(self):
-            return self.getToken(Parser_PQL.PREDICT, 0)
+            return self.getToken(ParserPQL.PREDICT, 0)
 
         def aggregation(self):
-            return self.getTypedRuleContext(Parser_PQL.AggregationContext,0)
+            return self.getTypedRuleContext(ParserPQL.AggregationContext,0)
 
 
         def RANK_TOP(self):
-            return self.getToken(Parser_PQL.RANK_TOP, 0)
+            return self.getToken(ParserPQL.RANK_TOP, 0)
 
         def INT(self):
-            return self.getToken(Parser_PQL.INT, 0)
+            return self.getToken(ParserPQL.INT, 0)
 
         def CLASSIFY(self):
-            return self.getToken(Parser_PQL.CLASSIFY, 0)
+            return self.getToken(ParserPQL.CLASSIFY, 0)
 
-        def condition(self):
-            return self.getTypedRuleContext(Parser_PQL.ConditionContext,0)
+        def expr_or(self):
+            return self.getTypedRuleContext(ParserPQL.Expr_orContext,0)
 
 
         def ID(self, i:int=None):
             if i is None:
-                return self.getTokens(Parser_PQL.ID)
+                return self.getTokens(ParserPQL.ID)
             else:
-                return self.getToken(Parser_PQL.ID, i)
+                return self.getToken(ParserPQL.ID, i)
 
         def DOT(self):
-            return self.getToken(Parser_PQL.DOT, 0)
+            return self.getToken(ParserPQL.DOT, 0)
 
         def STAR(self):
-            return self.getToken(Parser_PQL.STAR, 0)
+            return self.getToken(ParserPQL.STAR, 0)
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_predict
+            return ParserPQL.RULE_predict
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterPredict" ):
@@ -436,7 +436,7 @@ class Parser_PQL ( Parser ):
 
     def predict(self):
 
-        localctx = Parser_PQL.PredictContext(self, self._ctx, self.state)
+        localctx = ParserPQL.PredictContext(self, self._ctx, self.state)
         self.enterRule(localctx, 6, self.RULE_predict)
         self._la = 0 # Token type
         try:
@@ -446,7 +446,7 @@ class Parser_PQL ( Parser ):
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 46
-                self.match(Parser_PQL.PREDICT)
+                self.match(ParserPQL.PREDICT)
                 self.state = 47
                 self.aggregation()
                 self.state = 51
@@ -454,13 +454,13 @@ class Parser_PQL ( Parser ):
                 token = self._input.LA(1)
                 if token in [6]:
                     self.state = 48
-                    self.match(Parser_PQL.RANK_TOP)
+                    self.match(ParserPQL.RANK_TOP)
                     self.state = 49
-                    self.match(Parser_PQL.INT)
+                    self.match(ParserPQL.INT)
                     pass
                 elif token in [5]:
                     self.state = 50
-                    self.match(Parser_PQL.CLASSIFY)
+                    self.match(ParserPQL.CLASSIFY)
                     pass
                 elif token in [2]:
                     pass
@@ -471,21 +471,21 @@ class Parser_PQL ( Parser ):
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 53
-                self.match(Parser_PQL.PREDICT)
+                self.match(ParserPQL.PREDICT)
                 self.state = 54
-                self.condition()
+                self.expr_or()
                 self.state = 58
                 self._errHandler.sync(self)
                 token = self._input.LA(1)
                 if token in [6]:
                     self.state = 55
-                    self.match(Parser_PQL.RANK_TOP)
+                    self.match(ParserPQL.RANK_TOP)
                     self.state = 56
-                    self.match(Parser_PQL.INT)
+                    self.match(ParserPQL.INT)
                     pass
                 elif token in [5]:
                     self.state = 57
-                    self.match(Parser_PQL.CLASSIFY)
+                    self.match(ParserPQL.CLASSIFY)
                     pass
                 elif token in [2]:
                     pass
@@ -496,11 +496,11 @@ class Parser_PQL ( Parser ):
             elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
                 self.state = 60
-                self.match(Parser_PQL.PREDICT)
+                self.match(ParserPQL.PREDICT)
                 self.state = 61
-                self.match(Parser_PQL.ID)
+                self.match(ParserPQL.ID)
                 self.state = 62
-                self.match(Parser_PQL.DOT)
+                self.match(ParserPQL.DOT)
                 self.state = 63
                 _la = self._input.LA(1)
                 if not(_la==38 or _la==42):
@@ -513,13 +513,13 @@ class Parser_PQL ( Parser ):
                 token = self._input.LA(1)
                 if token in [6]:
                     self.state = 64
-                    self.match(Parser_PQL.RANK_TOP)
+                    self.match(ParserPQL.RANK_TOP)
                     self.state = 65
-                    self.match(Parser_PQL.INT)
+                    self.match(ParserPQL.INT)
                     pass
                 elif token in [5]:
                     self.state = 66
-                    self.match(Parser_PQL.CLASSIFY)
+                    self.match(ParserPQL.CLASSIFY)
                     pass
                 elif token in [2]:
                     pass
@@ -545,14 +545,14 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def WHERE(self):
-            return self.getToken(Parser_PQL.WHERE, 0)
+            return self.getToken(ParserPQL.WHERE, 0)
 
         def expr_or(self):
-            return self.getTypedRuleContext(Parser_PQL.Expr_orContext,0)
+            return self.getTypedRuleContext(ParserPQL.Expr_orContext,0)
 
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_where
+            return ParserPQL.RULE_where
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterWhere" ):
@@ -573,12 +573,12 @@ class Parser_PQL ( Parser ):
 
     def where(self):
 
-        localctx = Parser_PQL.WhereContext(self, self._ctx, self.state)
+        localctx = ParserPQL.WhereContext(self, self._ctx, self.state)
         self.enterRule(localctx, 8, self.RULE_where)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 71
-            self.match(Parser_PQL.WHERE)
+            self.match(ParserPQL.WHERE)
             self.state = 72
             self.expr_or()
         except RecognitionException as re:
@@ -599,19 +599,19 @@ class Parser_PQL ( Parser ):
 
         def expr_and(self, i:int=None):
             if i is None:
-                return self.getTypedRuleContexts(Parser_PQL.Expr_andContext)
+                return self.getTypedRuleContexts(ParserPQL.Expr_andContext)
             else:
-                return self.getTypedRuleContext(Parser_PQL.Expr_andContext,i)
+                return self.getTypedRuleContext(ParserPQL.Expr_andContext,i)
 
 
         def OR(self, i:int=None):
             if i is None:
-                return self.getTokens(Parser_PQL.OR)
+                return self.getTokens(ParserPQL.OR)
             else:
-                return self.getToken(Parser_PQL.OR, i)
+                return self.getToken(ParserPQL.OR, i)
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_expr_or
+            return ParserPQL.RULE_expr_or
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterExpr_or" ):
@@ -632,7 +632,7 @@ class Parser_PQL ( Parser ):
 
     def expr_or(self):
 
-        localctx = Parser_PQL.Expr_orContext(self, self._ctx, self.state)
+        localctx = ParserPQL.Expr_orContext(self, self._ctx, self.state)
         self.enterRule(localctx, 10, self.RULE_expr_or)
         self._la = 0 # Token type
         try:
@@ -644,7 +644,7 @@ class Parser_PQL ( Parser ):
             _la = self._input.LA(1)
             while _la==29:
                 self.state = 75
-                self.match(Parser_PQL.OR)
+                self.match(ParserPQL.OR)
                 self.state = 76
                 self.expr_and()
                 self.state = 81
@@ -669,19 +669,19 @@ class Parser_PQL ( Parser ):
 
         def expr_term(self, i:int=None):
             if i is None:
-                return self.getTypedRuleContexts(Parser_PQL.Expr_termContext)
+                return self.getTypedRuleContexts(ParserPQL.Expr_termContext)
             else:
-                return self.getTypedRuleContext(Parser_PQL.Expr_termContext,i)
+                return self.getTypedRuleContext(ParserPQL.Expr_termContext,i)
 
 
         def AND(self, i:int=None):
             if i is None:
-                return self.getTokens(Parser_PQL.AND)
+                return self.getTokens(ParserPQL.AND)
             else:
-                return self.getToken(Parser_PQL.AND, i)
+                return self.getToken(ParserPQL.AND, i)
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_expr_and
+            return ParserPQL.RULE_expr_and
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterExpr_and" ):
@@ -702,7 +702,7 @@ class Parser_PQL ( Parser ):
 
     def expr_and(self):
 
-        localctx = Parser_PQL.Expr_andContext(self, self._ctx, self.state)
+        localctx = ParserPQL.Expr_andContext(self, self._ctx, self.state)
         self.enterRule(localctx, 12, self.RULE_expr_and)
         self._la = 0 # Token type
         try:
@@ -714,7 +714,7 @@ class Parser_PQL ( Parser ):
             _la = self._input.LA(1)
             while _la==28:
                 self.state = 83
-                self.match(Parser_PQL.AND)
+                self.match(ParserPQL.AND)
                 self.state = 84
                 self.expr_term()
                 self.state = 89
@@ -738,21 +738,21 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def condition(self):
-            return self.getTypedRuleContext(Parser_PQL.ConditionContext,0)
+            return self.getTypedRuleContext(ParserPQL.ConditionContext,0)
 
 
         def OPEN_PAREN(self):
-            return self.getToken(Parser_PQL.OPEN_PAREN, 0)
+            return self.getToken(ParserPQL.OPEN_PAREN, 0)
 
         def expr_or(self):
-            return self.getTypedRuleContext(Parser_PQL.Expr_orContext,0)
+            return self.getTypedRuleContext(ParserPQL.Expr_orContext,0)
 
 
         def CLOSE_PAREN(self):
-            return self.getToken(Parser_PQL.CLOSE_PAREN, 0)
+            return self.getToken(ParserPQL.CLOSE_PAREN, 0)
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_expr_term
+            return ParserPQL.RULE_expr_term
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterExpr_term" ):
@@ -773,7 +773,7 @@ class Parser_PQL ( Parser ):
 
     def expr_term(self):
 
-        localctx = Parser_PQL.Expr_termContext(self, self._ctx, self.state)
+        localctx = ParserPQL.Expr_termContext(self, self._ctx, self.state)
         self.enterRule(localctx, 14, self.RULE_expr_term)
         try:
             self.state = 95
@@ -787,11 +787,11 @@ class Parser_PQL ( Parser ):
             elif token in [36]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 91
-                self.match(Parser_PQL.OPEN_PAREN)
+                self.match(ParserPQL.OPEN_PAREN)
                 self.state = 92
                 self.expr_or()
                 self.state = 93
-                self.match(Parser_PQL.CLOSE_PAREN)
+                self.match(ParserPQL.CLOSE_PAREN)
                 pass
             else:
                 raise NoViableAltException(self)
@@ -813,38 +813,38 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def aggregation(self):
-            return self.getTypedRuleContext(Parser_PQL.AggregationContext,0)
+            return self.getTypedRuleContext(ParserPQL.AggregationContext,0)
 
 
         def ID(self, i:int=None):
             if i is None:
-                return self.getTokens(Parser_PQL.ID)
+                return self.getTokens(ParserPQL.ID)
             else:
-                return self.getToken(Parser_PQL.ID, i)
+                return self.getToken(ParserPQL.ID, i)
 
         def DOT(self):
-            return self.getToken(Parser_PQL.DOT, 0)
+            return self.getToken(ParserPQL.DOT, 0)
 
         def num_condition(self):
-            return self.getTypedRuleContext(Parser_PQL.Num_conditionContext,0)
+            return self.getTypedRuleContext(ParserPQL.Num_conditionContext,0)
 
 
         def str_condition(self):
-            return self.getTypedRuleContext(Parser_PQL.Str_conditionContext,0)
+            return self.getTypedRuleContext(ParserPQL.Str_conditionContext,0)
 
 
         def null_check_condition(self):
-            return self.getTypedRuleContext(Parser_PQL.Null_check_conditionContext,0)
+            return self.getTypedRuleContext(ParserPQL.Null_check_conditionContext,0)
 
 
         def NOT(self):
-            return self.getToken(Parser_PQL.NOT, 0)
+            return self.getToken(ParserPQL.NOT, 0)
 
         def STAR(self):
-            return self.getToken(Parser_PQL.STAR, 0)
+            return self.getToken(ParserPQL.STAR, 0)
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_condition
+            return ParserPQL.RULE_condition
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterCondition" ):
@@ -865,7 +865,7 @@ class Parser_PQL ( Parser ):
 
     def condition(self):
 
-        localctx = Parser_PQL.ConditionContext(self, self._ctx, self.state)
+        localctx = ParserPQL.ConditionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 16, self.RULE_condition)
         self._la = 0 # Token type
         try:
@@ -875,7 +875,7 @@ class Parser_PQL ( Parser ):
             _la = self._input.LA(1)
             if _la==30:
                 self.state = 97
-                self.match(Parser_PQL.NOT)
+                self.match(ParserPQL.NOT)
 
 
             self.state = 104
@@ -887,9 +887,9 @@ class Parser_PQL ( Parser ):
                 pass
             elif token in [42]:
                 self.state = 101
-                self.match(Parser_PQL.ID)
+                self.match(ParserPQL.ID)
                 self.state = 102
-                self.match(Parser_PQL.DOT)
+                self.match(ParserPQL.DOT)
                 self.state = 103
                 _la = self._input.LA(1)
                 if not(_la==38 or _la==42):
@@ -936,19 +936,19 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def NUM_COMP_OP(self):
-            return self.getToken(Parser_PQL.NUM_COMP_OP, 0)
+            return self.getToken(ParserPQL.NUM_COMP_OP, 0)
 
         def DATETIME(self):
-            return self.getToken(Parser_PQL.DATETIME, 0)
+            return self.getToken(ParserPQL.DATETIME, 0)
 
         def FLOAT(self):
-            return self.getToken(Parser_PQL.FLOAT, 0)
+            return self.getToken(ParserPQL.FLOAT, 0)
 
         def INT(self):
-            return self.getToken(Parser_PQL.INT, 0)
+            return self.getToken(ParserPQL.INT, 0)
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_num_condition
+            return ParserPQL.RULE_num_condition
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterNum_condition" ):
@@ -969,13 +969,13 @@ class Parser_PQL ( Parser ):
 
     def num_condition(self):
 
-        localctx = Parser_PQL.Num_conditionContext(self, self._ctx, self.state)
+        localctx = ParserPQL.Num_conditionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 18, self.RULE_num_condition)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 111
-            self.match(Parser_PQL.NUM_COMP_OP)
+            self.match(ParserPQL.NUM_COMP_OP)
             self.state = 112
             _la = self._input.LA(1)
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 15032385536) != 0)):
@@ -1000,13 +1000,13 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def STR_COMP_OP(self):
-            return self.getToken(Parser_PQL.STR_COMP_OP, 0)
+            return self.getToken(ParserPQL.STR_COMP_OP, 0)
 
         def STRING(self):
-            return self.getToken(Parser_PQL.STRING, 0)
+            return self.getToken(ParserPQL.STRING, 0)
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_str_condition
+            return ParserPQL.RULE_str_condition
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterStr_condition" ):
@@ -1027,14 +1027,14 @@ class Parser_PQL ( Parser ):
 
     def str_condition(self):
 
-        localctx = Parser_PQL.Str_conditionContext(self, self._ctx, self.state)
+        localctx = ParserPQL.Str_conditionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 20, self.RULE_str_condition)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 114
-            self.match(Parser_PQL.STR_COMP_OP)
+            self.match(ParserPQL.STR_COMP_OP)
             self.state = 115
-            self.match(Parser_PQL.STRING)
+            self.match(ParserPQL.STRING)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1052,10 +1052,10 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def NULL_CHECK_OP(self):
-            return self.getToken(Parser_PQL.NULL_CHECK_OP, 0)
+            return self.getToken(ParserPQL.NULL_CHECK_OP, 0)
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_null_check_condition
+            return ParserPQL.RULE_null_check_condition
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterNull_check_condition" ):
@@ -1076,12 +1076,12 @@ class Parser_PQL ( Parser ):
 
     def null_check_condition(self):
 
-        localctx = Parser_PQL.Null_check_conditionContext(self, self._ctx, self.state)
+        localctx = ParserPQL.Null_check_conditionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 22, self.RULE_null_check_condition)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 117
-            self.match(Parser_PQL.NULL_CHECK_OP)
+            self.match(ParserPQL.NULL_CHECK_OP)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1099,47 +1099,47 @@ class Parser_PQL ( Parser ):
             self.parser = parser
 
         def AGGR_FUNC(self):
-            return self.getToken(Parser_PQL.AGGR_FUNC, 0)
+            return self.getToken(ParserPQL.AGGR_FUNC, 0)
 
         def OPEN_PAREN(self):
-            return self.getToken(Parser_PQL.OPEN_PAREN, 0)
+            return self.getToken(ParserPQL.OPEN_PAREN, 0)
 
         def ID(self, i:int=None):
             if i is None:
-                return self.getTokens(Parser_PQL.ID)
+                return self.getTokens(ParserPQL.ID)
             else:
-                return self.getToken(Parser_PQL.ID, i)
+                return self.getToken(ParserPQL.ID, i)
 
         def DOT(self):
-            return self.getToken(Parser_PQL.DOT, 0)
+            return self.getToken(ParserPQL.DOT, 0)
 
         def CLOSE_PAREN(self):
-            return self.getToken(Parser_PQL.CLOSE_PAREN, 0)
+            return self.getToken(ParserPQL.CLOSE_PAREN, 0)
 
         def STAR(self):
-            return self.getToken(Parser_PQL.STAR, 0)
+            return self.getToken(ParserPQL.STAR, 0)
 
         def where(self):
-            return self.getTypedRuleContext(Parser_PQL.WhereContext,0)
+            return self.getTypedRuleContext(ParserPQL.WhereContext,0)
 
 
         def COMMA(self, i:int=None):
             if i is None:
-                return self.getTokens(Parser_PQL.COMMA)
+                return self.getTokens(ParserPQL.COMMA)
             else:
-                return self.getToken(Parser_PQL.COMMA, i)
+                return self.getToken(ParserPQL.COMMA, i)
 
         def INT(self, i:int=None):
             if i is None:
-                return self.getTokens(Parser_PQL.INT)
+                return self.getTokens(ParserPQL.INT)
             else:
-                return self.getToken(Parser_PQL.INT, i)
+                return self.getToken(ParserPQL.INT, i)
 
         def TIME_MEASURE_UNIT(self):
-            return self.getToken(Parser_PQL.TIME_MEASURE_UNIT, 0)
+            return self.getToken(ParserPQL.TIME_MEASURE_UNIT, 0)
 
         def getRuleIndex(self):
-            return Parser_PQL.RULE_aggregation
+            return ParserPQL.RULE_aggregation
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterAggregation" ):
@@ -1160,19 +1160,19 @@ class Parser_PQL ( Parser ):
 
     def aggregation(self):
 
-        localctx = Parser_PQL.AggregationContext(self, self._ctx, self.state)
+        localctx = ParserPQL.AggregationContext(self, self._ctx, self.state)
         self.enterRule(localctx, 24, self.RULE_aggregation)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 119
-            self.match(Parser_PQL.AGGR_FUNC)
+            self.match(ParserPQL.AGGR_FUNC)
             self.state = 120
-            self.match(Parser_PQL.OPEN_PAREN)
+            self.match(ParserPQL.OPEN_PAREN)
             self.state = 121
-            self.match(Parser_PQL.ID)
+            self.match(ParserPQL.ID)
             self.state = 122
-            self.match(Parser_PQL.DOT)
+            self.match(ParserPQL.DOT)
             self.state = 123
             _la = self._input.LA(1)
             if not(_la==38 or _la==42):
@@ -1193,27 +1193,27 @@ class Parser_PQL ( Parser ):
             _la = self._input.LA(1)
             if _la==35:
                 self.state = 127
-                self.match(Parser_PQL.COMMA)
+                self.match(ParserPQL.COMMA)
                 self.state = 128
-                self.match(Parser_PQL.INT)
+                self.match(ParserPQL.INT)
                 self.state = 129
-                self.match(Parser_PQL.COMMA)
+                self.match(ParserPQL.COMMA)
                 self.state = 130
-                self.match(Parser_PQL.INT)
+                self.match(ParserPQL.INT)
                 self.state = 133
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if _la==35:
                     self.state = 131
-                    self.match(Parser_PQL.COMMA)
+                    self.match(ParserPQL.COMMA)
                     self.state = 132
-                    self.match(Parser_PQL.TIME_MEASURE_UNIT)
+                    self.match(ParserPQL.TIME_MEASURE_UNIT)
 
 
 
 
             self.state = 137
-            self.match(Parser_PQL.CLOSE_PAREN)
+            self.match(ParserPQL.CLOSE_PAREN)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)

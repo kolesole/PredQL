@@ -1,4 +1,4 @@
-# Generated from Lexer_PQL.g4 by ANTLR 4.13.2
+# Generated from LexerPQL.g4 by ANTLR 4.13.2
 from antlr4 import *
 from io import StringIO
 import sys
@@ -325,7 +325,7 @@ def serializedATN():
         789,791,801,803,808,814,820,1,6,0,0
     ]
 
-class Lexer_PQL(Lexer):
+class LexerPQL(Lexer):
 
     atn = ATNDeserializer().deserialize(serializedATN())
 
@@ -404,7 +404,7 @@ class Lexer_PQL(Lexer):
                   "CLOSE_PAREN", "STAR", "SEMI_COLUMN", "TIME_MEASURE_UNIT", 
                   "STRING", "ID", "WS_SKIP", "ANY" ]
 
-    grammarFileName = "Lexer_PQL.g4"
+    grammarFileName = "LexerPQL.g4"
 
     def __init__(self, input=None, output:TextIO = sys.stdout):
         super().__init__(input, output)

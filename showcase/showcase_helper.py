@@ -2,14 +2,11 @@ from relbench.base import Database
 
 from antlr4 import TerminalNode, InputStream, CommonTokenStream
 
-from pql.parser.Lexer_PQL import Lexer_PQL
-from pql.parser.Parser_PQL import Parser_PQL
-from pql.visitor.PQLVisitor import PQLVisitor
-from pql.converter.Converter import PQLConverter
-from pql.converter.TemporalConverter import TPQLConverter
-from pql.converter.StaticConverter import SPQLConverter
+from pql.parser import LexerPQL, ParserPQL
+from pql.visitor import VisitorPQL
+from pql.converter import ConverterPQL, SConverterPQL, TConverterPQL 
 
-def print_tree(node, parser, indent=0):
+def print_tree(node, parser):
    
     space = '  '
 
@@ -19,13 +16,13 @@ def print_tree(node, parser, indent=0):
         rule_name = parser.ruleNames[node.getRuleIndex()]
         print(f"{space}Rule: {rule_name}")
         for child in node.getChildren():
-            print_tree(child, parser, indent + 1)
+            print_tree(child, parser)
 
 def parse_query(query: str):
     input_stream = InputStream(query)
-    lexer = Lexer_PQL(input_stream)
+    lexer = LexerPQL(input_stream)
     token_stream = CommonTokenStream(lexer)
-    parser = Parser_PQL(token_stream)
+    parser = ParserPQL(token_stream)
 
     tree = parser.query()
     
@@ -33,21 +30,21 @@ def parse_query(query: str):
     print(query)
     print("=== Parse Tree ===")
     print_tree(tree, parser)
-    visitor = PQLVisitor()
+    visitor = VisitorPQL()
     print(visitor.visit(tree))
     print("==================")
 
     return tree
 
 class ConverterShowcaseHelper:
-    pql_converter: PQLConverter
+    pql_converter: ConverterPQL
     
     def __init__(self, db: Database, timestamps=None):
         
         if timestamps is not None:
-            self.pql_converter = TPQLConverter(db, timestamps)
+            self.pql_converter = TConverterPQL(db, timestamps)
         else:
-            self.pql_converter = SPQLConverter(db)
+            self.pql_converter = SConverterPQL(db)
 
     def convert_query(self, query):
         print("========================================")

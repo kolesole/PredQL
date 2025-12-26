@@ -1,9 +1,9 @@
-from pql.parser.Parser_PQL import Parser_PQL
-from pql.parser.Parser_PQLVisitor import Parser_PQLVisitor
+from pql.parser.gen.ParserPQL import ParserPQL
+from pql.parser.gen.ParserPQLVisitor import ParserPQLVisitor
 
-class PQLVisitor(Parser_PQLVisitor):
-    # Visit a parse tree produced by Parser_PQL#query.
-    def visitQuery(self, ctx:Parser_PQL.QueryContext):
+class VisitorPQL(ParserPQLVisitor):
+    # Visit a parse tree produced by ParserPQL#query.
+    def visitQuery(self, ctx:ParserPQL.QueryContext):
         predict = self.visit(ctx.predict())
         for_each = self.visit(ctx.for_each())
         assuming = self.visit(ctx.assuming()) if ctx.assuming() else None
@@ -17,8 +17,8 @@ class PQLVisitor(Parser_PQLVisitor):
         return query_dict
 
 
-    # Visit a parse tree produced by Parser_PQL#assuming.
-    def visitAssuming(self, ctx:Parser_PQL.AssumingContext):
+    # Visit a parse tree produced by ParserPQL#assuming.
+    def visitAssuming(self, ctx:ParserPQL.AssumingContext):
         qtype = "assuming"
         expr = self.visit(ctx.expr_or())
         
@@ -28,8 +28,8 @@ class PQLVisitor(Parser_PQLVisitor):
         return assuming_dict
 
 
-    # Visit a parse tree produced by Parser_PQL#for_each.
-    def visitFor_each(self, ctx:Parser_PQL.For_eachContext):
+    # Visit a parse tree produced by ParserPQL#for_each.
+    def visitFor_each(self, ctx:ParserPQL.For_eachContext):
         qtype = "for_each"
         table = ctx.ID(0).getText()
         column = ctx.ID(1).getText()   
@@ -43,21 +43,21 @@ class PQLVisitor(Parser_PQLVisitor):
         return for_each_dict
 
 
-    # Visit a parse tree produced by Parser_PQL#predict.
-    def visitPredict(self, ctx:Parser_PQL.PredictContext):
+    # Visit a parse tree produced by ParserPQL#predict.
+    def visitPredict(self, ctx:ParserPQL.PredictContext):
         qtype = "predict"
         pred_type = None
         aggregation = None
-        condition = None
+        expr = None
         table = None
         column = None
 
         if ctx.aggregation():
             pred_type = "aggregation"
             aggregation = self.visit(ctx.aggregation())
-        elif ctx.condition():
-            pred_type = "condition"
-            condition = self.visit(ctx.condition())
+        elif ctx.expr_or():
+            pred_type = "expr"
+            expr = self.visit(ctx.expr_or())
         else:
             pred_type = "id_dot_id"
             table = ctx.ID(0).getText()
@@ -70,7 +70,7 @@ class PQLVisitor(Parser_PQLVisitor):
         predict_dict = {"QType"       : qtype,
                         "PredType"    : pred_type,
                         "Aggregation" : aggregation,
-                        "Condition"   : condition,
+                        "Expr"        : expr,
                         "Table"       : table,
                         "Column"      : column,
                         "RankTop"     : rank_top,
@@ -80,8 +80,8 @@ class PQLVisitor(Parser_PQLVisitor):
         return predict_dict
 
 
-    # Visit a parse tree produced by Parser_PQL#where.
-    def visitWhere(self, ctx:Parser_PQL.WhereContext):
+    # Visit a parse tree produced by ParserPQL#where.
+    def visitWhere(self, ctx:ParserPQL.WhereContext):
         qtype = "where"
         expr = self.visit(ctx.expr_or())    
 
@@ -90,8 +90,8 @@ class PQLVisitor(Parser_PQLVisitor):
                      }
         return where_dict
     
-     # Visit a parse tree produced by Parser_PQL#expr_or.
-    def visitExpr_or(self, ctx:Parser_PQL.Expr_orContext):
+     # Visit a parse tree produced by ParserPQL#expr_or.
+    def visitExpr_or(self, ctx:ParserPQL.Expr_orContext):
         expr_dict = None
         if len(ctx.expr_and()) == 1:
             return self.visit(ctx.expr_and(0))
@@ -107,8 +107,8 @@ class PQLVisitor(Parser_PQLVisitor):
         return expr_dict
 
 
-    # Visit a parse tree produced by Parser_PQL#expr_and.
-    def visitExpr_and(self, ctx:Parser_PQL.Expr_andContext):
+    # Visit a parse tree produced by ParserPQL#expr_and.
+    def visitExpr_and(self, ctx:ParserPQL.Expr_andContext):
         if len(ctx.expr_term()) == 1:
             return self.visit(ctx.expr_term(0))
         
@@ -123,16 +123,16 @@ class PQLVisitor(Parser_PQLVisitor):
         return expr_dict
 
 
-    # Visit a parse tree produced by Parser_PQL#expr_term.
-    def visitExpr_term(self, ctx:Parser_PQL.Expr_termContext):
+    # Visit a parse tree produced by ParserPQL#expr_term.
+    def visitExpr_term(self, ctx:ParserPQL.Expr_termContext):
         if ctx.condition():
             return self.visit(ctx.condition())
         elif ctx.expr_or():
             return self.visit(ctx.expr_or())
 
 
-    # Visit a parse tree produced by Parser_PQL#condition.
-    def visitCondition(self, ctx:Parser_PQL.ConditionContext):
+    # Visit a parse tree produced by ParserPQL#condition.
+    def visitCondition(self, ctx:ParserPQL.ConditionContext):
         cond_dict = None
         cond_type = None
         NOT = True if ctx.NOT() else False
@@ -166,8 +166,8 @@ class PQLVisitor(Parser_PQLVisitor):
         return cond_dict
 
 
-    # Visit a parse tree produced by Parser_PQL#num_condition.
-    def visitNum_condition(self, ctx:Parser_PQL.Num_conditionContext):
+    # Visit a parse tree produced by ParserPQL#num_condition.
+    def visitNum_condition(self, ctx:ParserPQL.Num_conditionContext):
         ctype = "num"
         comp_op = ctx.NUM_COMP_OP().getText()
     
@@ -186,8 +186,8 @@ class PQLVisitor(Parser_PQLVisitor):
         return num_cond_dict
 
 
-    # Visit a parse tree produced by Parser_PQL#str_condition.
-    def visitStr_condition(self, ctx:Parser_PQL.Str_conditionContext):
+    # Visit a parse tree produced by ParserPQL#str_condition.
+    def visitStr_condition(self, ctx:ParserPQL.Str_conditionContext):
         ctype = "str"
         comp_op = ctx.STR_COMP_OP().getText()
         string = ctx.STRING().getText() 
@@ -200,7 +200,7 @@ class PQLVisitor(Parser_PQLVisitor):
 
 
     # Visit a parse tree produced by Parser_PQL#null_check_condition.
-    def visitNull_check_condition(self, ctx:Parser_PQL.Null_check_conditionContext):
+    def visitNull_check_condition(self, ctx:ParserPQL.Null_check_conditionContext):
         ctype = "null"
         check_op = ctx.NULL_CHECK_OP().getText()
 
@@ -211,7 +211,7 @@ class PQLVisitor(Parser_PQLVisitor):
 
 
     # Visit a parse tree produced by Parser_PQL#aggregation.
-    def visitAggregation(self, ctx:Parser_PQL.AggregationContext):
+    def visitAggregation(self, ctx:ParserPQL.AggregationContext):
         aggr_type = ctx.AGGR_FUNC().getText()
         table = ctx.ID(0).getText()
         column = "*" if ctx.STAR() else ctx.ID(1).getText()
