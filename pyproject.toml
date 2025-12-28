@@ -46,7 +46,7 @@ select = ["E", "F", "W", "I", "D"]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"predql/parser/gen/**" = ["E", "F", "W", "D"] 
+"predql/parser/gen/**" = ["E", "F", "W", "D", "I"] 
 "__init__.py" = ["F401"]
 "predql/visitor/**/*.py" = ["D"]
 "tests/**/*.py" = ["D", "E501"]

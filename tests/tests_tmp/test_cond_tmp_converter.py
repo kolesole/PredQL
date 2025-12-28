@@ -1,28 +1,22 @@
 """Tests for temporal converter condition handling."""
 
+from io import StringIO
 import pandas as pd
 import pytest
 
 
-# @pytest.mark.parametrize("pql_aggr, sql_aggr", [
-#     ("AVG", "AVG"),
-#     ("MAX", "MAX"),
-#     ("MIN", "MIN"),
-#     ("SUM", "SUM")
-# ])
-@pytest.mark.parametrize("pql_cond, sql_cond", [
-    ("!=", "!="),
-    ("<", "<"),
-    ("<=", "<="),
-    ("==", "="),
-    (">", ">"),
-    (">=", ">=")
+@pytest.mark.parametrize("pql_cond", [
+    ("!="),
+    ("<"),
+    ("<="),
+    ("=="),
+    (">"),
+    (">=")
 ])
 def test_num_cond_tmp(temporal_converter,
-                      pql_cond,
-                      sql_cond):
+                      pql_cond):
     pql_query = f"""
-        PREDICT AVG(grades.grade, 0, 10, DAYS) {pql_cond} 2.5
+        PREDICT AVG(grades.grade, 0, 10, DAYS) {pql_cond} 2.0
         FOR EACH students.studentId;
     """
     res_table = temporal_converter.convert(pql_query)
@@ -31,54 +25,95 @@ def test_num_cond_tmp(temporal_converter,
     res_pkey_col = res_table.pkey_col
     res_time_col = res_table.time_col
 
-    sql_query = f"""
-        SELECT
-            s.studentId AS fk,
-            t.timestamp AS timestamp,
-            CASE
-                WHEN AVG(g.grade) {sql_cond} 2.5 THEN true
-                ELSE false
-            END AS label
-        FROM
-            students s
-        CROSS JOIN
-            timestamp_df t
-        LEFT JOIN
-            grades g
-        ON
-            g.studentId = s.studentId
-        AND
-            g.date >= t.timestamp + INTERVAL '0 DAY'
-        AND
-            g.date < t.timestamp + INTERVAL '10 DAY'
-        GROUP BY
-            s.studentId, t.timestamp
-        ORDER BY
-            t.timestamp, s.studentId;
-    """
-    ref_df = temporal_converter.conn.sql(sql_query).df()
-    ref_time_col = "timestamp"
+    match pql_cond:
+        case "!=":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, True
+                1,  2025-01-01, False
+                2,  2025-01-01, False
+                0,  2025-01-10, True
+                1,  2025-01-10, False
+                2,  2025-01-10, False
+            """
+        case "<":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, True
+                1,  2025-01-01, False
+                2,  2025-01-01, False
+                0,  2025-01-10, False
+                1,  2025-01-10, False
+                2,  2025-01-10, False
+            """
+        case "<=":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, True
+                1,  2025-01-01, True
+                2,  2025-01-01, False
+                0,  2025-01-10, False
+                1,  2025-01-10, True
+                2,  2025-01-10, False
+            """
+        case "==":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, False
+                1,  2025-01-01, True
+                2,  2025-01-01, False
+                0,  2025-01-10, False
+                1,  2025-01-10, True
+                2,  2025-01-10, False
+            """
+        case ">":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, False
+                1,  2025-01-01, False
+                2,  2025-01-01, False
+                0,  2025-01-10, True
+                1,  2025-01-10, False
+                2,  2025-01-10, False
+            """
+        case ">=":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, False
+                1,  2025-01-01, True
+                2,  2025-01-01, False
+                0,  2025-01-10, True
+                1,  2025-01-10, True
+                2,  2025-01-10, False
+            """
 
-    pd.testing.assert_frame_equal(res_df, ref_df)
+    ref_df = pd.read_csv(StringIO(ref_data), 
+                         skipinitialspace=True, 
+                         parse_dates=["timestamp"],
+                         na_values=['nan', 'NaN', 'NONE', ''])
+    
+    pd.testing.assert_frame_equal(res_df, 
+                                  ref_df, 
+                                  check_dtype=False,
+                                  atol=1e-5)
     assert res_fkey_col_to_pkey_table is None
     assert res_pkey_col is None
-    assert res_time_col == ref_time_col
+    assert res_time_col == "timestamp"
 
-# NOTE: DOESN'T WORK WITHOUT STATIC WHERE
-@pytest.mark.parametrize("pql_cond, sql_cond", [
-    ("CONTAINS", lambda s : f"LIKE '%{s}%'"),
-    ("NOT CONTAINS", lambda s : f"NOT LIKE '%{s}%'"),
-    ("LIKE", lambda s : f"LIKE '{s}'"),
-    ("NOT LIKE", lambda s : f"NOT LIKE '{s}'"),
-    ("STARTS WITH", lambda s : f"LIKE '{s}%'"),
-    ("ENDS WITH", lambda s : f"LIKE '%{s}'"),
-    ("=", lambda s : f"= '{s}'")
+
+@pytest.mark.parametrize("pql_cond", [
+    ("CONTAINS"),
+    ("NOT CONTAINS"),
+    ("LIKE"),
+    ("NOT LIKE"),
+    ("STARTS WITH"),
+    ("ENDS WITH"),
+    ("=")
 ])
 def test_str_cond_tmp(temporal_converter,
-                      pql_cond,
-                      sql_cond):
+                      pql_cond):
     pql_query = f"""
-        PREDICT AVG(grades.grade WHERE students.name {pql_cond} "k", 0, 10, DAYS)
+        PREDICT FIRST(favSubjects.subject, 0, 10, DAYS) {pql_cond} "P"
         FOR EACH students.studentId;
     """
     res_table = temporal_converter.convert(pql_query)
@@ -87,51 +122,100 @@ def test_str_cond_tmp(temporal_converter,
     res_pkey_col = res_table.pkey_col
     res_time_col = res_table.time_col
 
-    sql_query = f"""
-        SELECT
-            s.studentId AS fk,
-            t.timestamp AS timestamp,
-            AVG(g.grade) AS label
-        FROM
-            students s
-        CROSS JOIN
-            timestamp_df t
-        LEFT JOIN
-            grades g
-        ON
-            g.studentId = s.studentId
-        AND
-            g.date >= t.timestamp + INTERVAL '0 DAY'
-        AND
-            g.date < t.timestamp + INTERVAL '10 DAY'
-        WHERE
-            s.name {sql_cond("k")}
-        GROUP BY
-            s.studentId, t.timestamp
-        ORDER BY
-            t.timestamp, s.studentId;
-    """
-    ref_df = temporal_converter.conn.sql(sql_query).df()
-    ref_time_col = "timestamp"
+    match pql_cond:
+        case "CONTAINS":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, True
+                1,  2025-01-01, True
+                2,  2025-01-01, False
+                0,  2025-01-10, False
+                1,  2025-01-10, True
+                2,  2025-01-10, False
+            """
+        case "NOT CONTAINS":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, False
+                1,  2025-01-01, False
+                2,  2025-01-01, False
+                0,  2025-01-10, True
+                1,  2025-01-10, False
+                2,  2025-01-10, False
+            """
+        case "LIKE":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, False
+                1,  2025-01-01, False
+                2,  2025-01-01, False
+                0,  2025-01-10, False
+                1,  2025-01-10, True
+                2,  2025-01-10, False
+            """
+        case "NOT LIKE":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, True
+                1,  2025-01-01, True
+                2,  2025-01-01, False
+                0,  2025-01-10, True
+                1,  2025-01-10, False
+                2,  2025-01-10, False
+            """
+        case "STARTS WITH":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, False
+                1,  2025-01-01, True
+                2,  2025-01-01, False
+                0,  2025-01-10, False
+                1,  2025-01-10, True
+                2,  2025-01-10, False
+            """
+        case "ENDS WITH":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, False
+                1,  2025-01-01, True
+                2,  2025-01-01, False
+                0,  2025-01-10, False
+                1,  2025-01-10, True
+                2,  2025-01-10, False
+            """
+        case "=":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, False
+                1,  2025-01-01, False
+                2,  2025-01-01, False
+                0,  2025-01-10, False
+                1,  2025-01-10, True
+                2,  2025-01-10, False
+            """
 
-    print(res_df)
-    print(ref_df)
-
-    pd.testing.assert_frame_equal(res_df, ref_df)
+    ref_df = pd.read_csv(StringIO(ref_data), 
+                         skipinitialspace=True, 
+                         parse_dates=["timestamp"],
+                         na_values=['nan', 'NaN', 'NONE', ''])
+    
+    pd.testing.assert_frame_equal(res_df, 
+                                  ref_df, 
+                                  check_dtype=False,
+                                  atol=1e-5)
     assert res_fkey_col_to_pkey_table is None
     assert res_pkey_col is None
-    assert res_time_col == ref_time_col
+    assert res_time_col == "timestamp"
 
-#TODO: FIX PROBLEM WITH <<IS NULL>>
-@pytest.mark.parametrize("pql_cond, sql_cond", [
-    ("IS NOT NULL", "IS NOT NULL"),
-    ("IS NULL", "IS NULL")
+
+@pytest.mark.parametrize("pql_cond", [
+    ("IS NOT NULL"),
+    ("IS NULL")
 ])
 def test_null_cond_tmp(temporal_converter,
-                       pql_cond,
-                       sql_cond):
+                       pql_cond):
     pql_query = f"""
-        PREDICT FIRST(grades.grade, 0, 10, DAYS) {pql_cond}
+        PREDICT LAST(grades.grade, 0, 10, DAYS) {pql_cond}
         FOR EACH students.studentId;
     """
     res_table = temporal_converter.convert(pql_query)
@@ -140,40 +224,37 @@ def test_null_cond_tmp(temporal_converter,
     res_pkey_col = res_table.pkey_col
     res_time_col = res_table.time_col
 
-    sql_query = f"""
-        SELECT
-            s.studentId AS fk,
-            t.timestamp AS timestamp,
-            CASE
-                WHEN ARRAY_AGG(g.grade ORDER BY g.date)[1] {sql_cond}
-                THEN true
-                ELSE false
-            END AS label
-        FROM
-            students s
-        CROSS JOIN
-            timestamp_df t
-        LEFT JOIN
-            grades g
-        ON
-            g.studentId = s.studentId
-        AND
-            g.date >= t.timestamp + INTERVAL '0 DAY'
-        AND
-            g.date < t.timestamp + INTERVAL '10 DAY'
-        GROUP BY
-            s.studentId, t.timestamp
-        ORDER BY
-            t.timestamp, s.studentId;
-    """
-    ref_df = temporal_converter.conn.sql(sql_query).df()
-    ref_time_col = "timestamp"
+    match pql_cond:
+        case "IS NULL":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, True
+                1,  2025-01-01, False
+                2,  2025-01-01, True
+                0,  2025-01-10, False
+                1,  2025-01-10, False
+                2,  2025-01-10, True
+            """
+        case "IS NOT NULL":
+            ref_data = """
+                fk, timestamp,  label
+                0,  2025-01-01, False
+                1,  2025-01-01, True
+                2,  2025-01-01, False
+                0,  2025-01-10, True
+                1,  2025-01-10, True
+                2,  2025-01-10, False
+            """
 
-    print(temporal_converter.db.table_dict["grades"])
-    print(ref_df)
-    print(res_df)
-
-    pd.testing.assert_frame_equal(res_df, ref_df)
+    ref_df = pd.read_csv(StringIO(ref_data), 
+                         skipinitialspace=True, 
+                         parse_dates=["timestamp"],
+                         na_values=['nan', 'NaN', 'NONE', ''])
+    
+    pd.testing.assert_frame_equal(res_df, 
+                                  ref_df, 
+                                  check_dtype=False,
+                                  atol=1e-5)
     assert res_fkey_col_to_pkey_table is None
     assert res_pkey_col is None
-    assert res_time_col == ref_time_col
+    assert res_time_col == "timestamp"

@@ -49,11 +49,11 @@ def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk
 
     match aggr_type:
         case "avg":
-            return lambda table : f"AVG({table}.{column})"
+            return lambda table: f"AVG({table}.{column})"
         case "count":
-            return lambda table : f"COUNT({table}.{column})"
+            return lambda table: f"COUNT({table}.{column})"
         case "count_distinct":
-            return lambda table : f"COUNT(DISTINCT {table}.{column})"
+            return lambda table: f"COUNT(DISTINCT {table}.{column})"
         case "first":
             return lambda table : f"ARRAY_AGG({table}.{column} ORDER BY {table}.{time_column} ASC)[1]"
         case "last":
