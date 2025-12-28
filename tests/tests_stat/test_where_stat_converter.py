@@ -1,10 +1,13 @@
-import pytest
+"""Tests for static converter WHERE clause handling."""
+
 import pandas as pd
+import pytest
+
 
 def test_where_stat(static_converter):
-    pql_query = f"""
+    pql_query = """
         PREDICT studyInf.favSubject
-        FOR EACH students.studentId 
+        FOR EACH students.studentId
         WHERE studyInf.year > 1;
     """
     res_table = static_converter.convert(pql_query)
@@ -13,20 +16,20 @@ def test_where_stat(static_converter):
     res_pkey_col = res_table.pkey_col
     res_time_col = res_table.time_col
 
-    sql_query = f"""
-        SELECT 
+    sql_query = """
+        SELECT
             s.studentId AS fk,
             si.favSubject AS label
-        FROM 
+        FROM
             students s
         JOIN
             studyInf si
-        ON 
+        ON
             si.studentId = s.studentId
-        WHERE 
+        WHERE
             si.year > 1
         ORDER BY
-            s.studentId;  
+            s.studentId;
     """
     ref_df = static_converter.conn.sql(sql_query).df()
 
@@ -34,9 +37,9 @@ def test_where_stat(static_converter):
     print(ref_df)
 
     pd.testing.assert_frame_equal(res_df, ref_df)
-    assert res_fkey_col_to_pkey_table == None
-    assert res_pkey_col == None
-    assert res_time_col == None
+    assert res_fkey_col_to_pkey_table is None
+    assert res_pkey_col is None
+    assert res_time_col is None
 
 
 @pytest.mark.parametrize("pql_log_op, sql_log_op", [
@@ -48,7 +51,7 @@ def test_nested_where_stat(static_converter,
                            sql_log_op):
     pql_query = f"""
         PREDICT studyInf.favSubject
-        FOR EACH students.studentId 
+        FOR EACH students.studentId
         WHERE studyInf.year > 1 {pql_log_op} students.name CONTAINS "k";
     """
     res_table = static_converter.convert(pql_query)
@@ -58,19 +61,19 @@ def test_nested_where_stat(static_converter,
     res_time_col = res_table.time_col
 
     sql_query = f"""
-        SELECT 
+        SELECT
             s.studentId AS fk,
             si.favSubject AS label
-        FROM 
+        FROM
             students s
         JOIN
             studyInf si
-        ON 
+        ON
             si.studentId = s.studentId
-        WHERE 
+        WHERE
             si.year > 1 {sql_log_op} s.name LIKE '%k%'
         ORDER BY
-            s.studentId;  
+            s.studentId;
     """
     ref_df = static_converter.conn.sql(sql_query).df()
 
@@ -78,7 +81,7 @@ def test_nested_where_stat(static_converter,
     print(ref_df)
 
     pd.testing.assert_frame_equal(res_df, ref_df)
-    assert res_fkey_col_to_pkey_table == None
-    assert res_pkey_col == None
-    assert res_time_col == None
+    assert res_fkey_col_to_pkey_table is None
+    assert res_pkey_col is None
+    assert res_time_col is None
 

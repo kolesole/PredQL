@@ -1,73 +1,69 @@
-import pandas as pd
+"""Temporal PredQL converter module for time-series queries."""
 
 import textwrap
 
+import pandas as pd
 from relbench.base import Database, Table
 
 from predql.converter.converter import ConverterPredQL
-
 from predql.converter.utils import build_aggr_func, get_div_line, get_indent
 
 
 class TConverterPredQL(ConverterPredQL):
-    r"""
-    Temporal PredQL converter class for temporal conversion PredQL -> SQL.
-    
+    r"""Temporal PredQL converter class for temporal conversion PredQL -> SQL.
+
     Converts temporal (time-series) PredQL queries into SQL queries.\
     Extends the base ConverterPredQL class with concrete implementations\
     for temporal prediction tasks with time window support.
     """
 
-    def __init__(self, 
-                 db         : Database, 
+    def __init__(self,
+                 db         : Database,
                  timestamps : "pd.Series[pd.Timestamp]") -> None:
-        r"""
-        Initializes a temporal PredQL converter with timestamp support.
+        r"""Initializes a temporal PredQL converter with timestamp support.
 
         Args:
-            `db` (`Database`): Database object containing the tables.
-            `timestamps` (`pd.Series[pd.Timestamp]`): Initial time points for predictions.
-        
-        Returns:
-            `out` (`None`):
-        """
+            db (Database): Database object containing the tables.
+            timestamps (pd.Series[pd.Timestamp]): Initial time points for predictions.
 
+        Returns:
+            out (None):
+        """
         super().__init__(db)
-        
+
         # store timestamps for temporal prediction
         self.timestamps = timestamps
         # create DataFrame with timestamp column for temporal operations
         timestamp_df = pd.DataFrame({"timestamp" : self.timestamps})
         # register timestamp_df in DuckDB for SQL queries
         self.conn.register("timestamp_df", timestamp_df)
-    
 
-    def convert(self, 
+
+    def convert(self,
                 predql_query : str,
                 indent       : int=0) -> Table:
-        r"""
-        Converts the temporal PredQL query string into an executable SQL query\ 
-        and returns the result as a *`Table`* object.
+        r"""Converts the temporal PredQL query string into an executable SQL query.
+
+        Returns the result as a *`Table`* object.
 
         Args:
-            `predql_query` (`str`): The PredQL query string to be converted and executed.
-            `indent` (`int`, optional): Indentation level for formatted SQL output, default is 0.
+            predql_query (str): The PredQL query string to be converted and executed.
+            indent (int, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
-            `out` (`Table`): The *`Table`* object containing the result of the executed SQL query,\
+            out (Table): The *`Table`* object containing the result of the executed SQL query,\
                     with columns (*fk*, *timestamp*, *label*) corresponding to the translated PredQL query output.
         """
-        
         # parse PredQL query into dictionary
         query_dict = self.parse_query(predql_query)
-        
+
         # check FOR EACH
         for_each_dict = query_dict["ForEach"]
         # extract parent table name
         ptable = for_each_dict["Table"]
         # extract primary key column name
         ppk = for_each_dict["Column"]
-        
+
         # check if FOR_EACH has WHERE clause for filtering
         where_dict = for_each_dict["Where"]
         for_each_query = None
@@ -75,7 +71,7 @@ class TConverterPredQL(ConverterPredQL):
         # otherwise -> for_each_query remains None
         if where_dict:
             for_each_query = self.build_expr(where_dict["Expr"], ptable, ppk, indent)
-        
+
         # build PREDICT query
         predict_dict = query_dict["Predict"]
         sql_query = self.build_predict(predict_dict, ptable, ppk, for_each_query, indent+1)
@@ -95,22 +91,22 @@ class TConverterPredQL(ConverterPredQL):
                 help_query = self.build_expr(predict_where_dict["Expr"], ptable, ppk)
 
                 sql_query = f"""
-                    SELECT 
+                    SELECT
                         sq.fk,
                         sq.timestamp,
                         sq.label
-                    FROM 
+                    FROM
                         ({sql_query}) sq
-                    JOIN 
+                    JOIN
                         ({help_query}) hq
-                    ON 
+                    ON
                         hq.fk = sq.fk
-                    ORDER BY 
+                    ORDER BY
                         sq.timestamp ASC, sq.fk ASC
                             """
-        
+
         # add semicolon to end of SQL query
-        sql_query = f"{sql_query};"   
+        sql_query = f"{sql_query};"
 
         print(sql_query)
 
@@ -122,32 +118,30 @@ class TConverterPredQL(ConverterPredQL):
             pkey_col=None,
             time_col="timestamp",  # mark timestamp as the time column
             )
-    
 
-    def build_assuming(self, 
+
+    def build_assuming(self,
                        query_dict    : dict,
-                       ptable        : str, 
+                       ptable        : str,
                        ppk           : str,
                        predict_query : str,
                        indent        : int=0) -> str:
-        r"""
-        Restricts a temporal prediction query using an ASSUMING expression.
+        r"""Restricts a temporal prediction query using an ASSUMING expression.
 
         Filters prediction results to keep only rows where the ASSUMING condition is true.
         Works by joining the prediction results with the ASSUMING expression on both fk and timestamp,
         preserving the label column only for matching rows.
 
         Args:
-            `query_dict` (`dict`): Parsed dictionary of the ASSUMING clause.
-            `ptable` (`str`): Name of the parent table.
-            `ppk` (str): Name of the primary key column in the parent table.
-            `predict_query` (str): The SQL subquery for the PREDICT part (fk, timestamp, label).
-            `indent` (int, optional): Indentation level for formatted SQL output, default is 0.
+            query_dict (dict): Parsed dictionary of the ASSUMING clause.
+            ptable (str): Name of the parent table.
+            ppk (str): Name of the primary key column in the parent table.
+            predict_query (str): The SQL subquery for the PREDICT part (fk, timestamp, label).
+            indent (int, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
-            `assuming_query` (`str`): The SQL query filtering predictions using ASSUMING with temporal constraints.
+            assuming_query (str): The SQL query filtering predictions using ASSUMING with temporal constraints.
         """
-        
         # build assuming expression
         expr_dict = query_dict["Expr"]
         expr_query = self.build_expr(expr_dict, ptable, ppk)
@@ -157,7 +151,7 @@ class TConverterPredQL(ConverterPredQL):
         div_line_ass2 = get_div_line("ASSUMING_END")
         div_line_help1 = get_div_line("HELP_PART_START")
         div_line_help2 = get_div_line("HELP_PART_END")
-            
+
         # build ASSUMING query with temporal join
         assuming_query = f"""
             {div_line_ass1}
@@ -167,11 +161,11 @@ class TConverterPredQL(ConverterPredQL):
             FROM
                 (
             {div_line_help1}
-                SELECT 
+                SELECT
                     parent.{ppk},
                     predict.timestamp,
                     predict.label
-                FROM 
+                FROM
                     {ptable} parent
                 JOIN
                     ({predict_query}) predict
@@ -185,44 +179,42 @@ class TConverterPredQL(ConverterPredQL):
                 expr.fk = help.{ppk}
             AND
                 expr.timestamp = help.timestamp
-            ORDER BY 
+            ORDER BY
                 help.timestamp ASC, help.{ppk} ASC
             {div_line_ass2}
             """
         assuming_query = textwrap.indent(assuming_query, get_indent(indent))
-        
+
         return assuming_query
 
 
-    def build_predict(self, 
+    def build_predict(self,
                       query_dict     : dict,
-                      ptable         : str,  
+                      ptable         : str,
                       ppk            : str,
                       for_each_query : str,
                       indent         : int=0) -> str:
-        r"""
-        Builds the SQL query for the PREDICT clause in temporal conversion.
+        r"""Builds the SQL query for the PREDICT clause in temporal conversion.
 
         Handles temporal prediction logic by cross-joining with prediction timestamps and
         implementing different label generation strategies based on prediction type.
 
         Args:
-            `query_dict` (`dict`): Parsed dictionary of the PREDICT clause.
-            `ptable` (`str`): Name of the parent table.
-            `ppk` (`str`): Name of the primary key column in the parent table.
-            `for_each_query` (`str`): SQL subquery from FOR_EACH WHERE (can be None).
-            `indent` (`int`, optional): Indentation level for formatted SQL output, default is 0.
+            query_dict (dict): Parsed dictionary of the PREDICT clause.
+            ptable (str): Name of the parent table.
+            ppk (str): Name of the primary key column in the parent table.
+            for_each_query (str): SQL subquery from FOR_EACH WHERE (can be None).
+            indent (int, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
-            `predict_query` (`str`): SQL subquery returning (fk, timestamp, label) triples.
+            predict_query (str): SQL subquery returning (fk, timestamp, label) triples.
         """
-        
         # check predict type, build main_query and label_query accordingly
         # aggregation / expr
         pred_type = query_dict["PredType"]
         if pred_type == "aggregation":
             main_query = self.build_aggregation(query_dict["Aggregation"], ptable, ppk, indent+1)
-            
+
             # determine label extraction logic based on modifiers
             if query_dict["Classify"]:
                 # CLASSIFY: use aggregated value directly
@@ -231,7 +223,7 @@ class TConverterPredQL(ConverterPredQL):
                 # RANK_TOP K: keep only top K elements from aggregation
                 K = int(query_dict["K"])
                 label_query = f"""
-                    CASE 
+                    CASE
                         WHEN ARRAY_LENGTH(main.comp_col) > {K} THEN main.comp_col[1:{K}]
                         ELSE main.comp_col
                     END
@@ -256,7 +248,7 @@ class TConverterPredQL(ConverterPredQL):
         div_line_pred2 = get_div_line("PREDICT_END")
         div_line_help1 = get_div_line("HELP_PART_START")
         div_line_help2 = get_div_line("HELP_PART_END")
-        
+
         # build final predict query depending on FOR EACH WHERE existence
         if for_each_query:
             predict_query = f"""
@@ -268,10 +260,10 @@ class TConverterPredQL(ConverterPredQL):
                 FROM
                     (
                 {div_line_help1}
-                    SELECT 
+                    SELECT
                         parent.{ppk},
                         for_each.timestamp,
-                    FROM 
+                    FROM
                         {ptable} parent
                     JOIN
                         ({for_each_query}) for_each
@@ -285,11 +277,11 @@ class TConverterPredQL(ConverterPredQL):
                     main.fk = help.{ppk}
                 AND
                     main.timestamp = help.timestamp
-                ORDER BY 
+                ORDER BY
                     help.timestamp ASC, help.{ppk} ASC
                 {div_line_pred2}
                 """
-        
+
         else:
             predict_query = f"""
                 {div_line_pred1}
@@ -299,7 +291,7 @@ class TConverterPredQL(ConverterPredQL):
                     {label_query} AS label
                 FROM
                     {ptable} parent
-                CROSS JOIN  
+                CROSS JOIN
                     timestamp_df time
                 LEFT JOIN
                     ({main_query}) main
@@ -307,38 +299,37 @@ class TConverterPredQL(ConverterPredQL):
                     main.fk = parent.{ppk}
                 AND
                     main.timestamp = time.timestamp
-                ORDER BY 
+                ORDER BY
                     time.timestamp ASC, parent.{ppk} ASC
                 {div_line_pred2}
                 """
-        predict_query = textwrap.indent(predict_query, get_indent(indent))       
+        predict_query = textwrap.indent(predict_query, get_indent(indent))
 
         return predict_query
-    
-    
-    def build_expr(self, 
+
+
+    def build_expr(self,
                    expr_dict : dict,
                    ptable    : str,
                    ppk       : str,
                    indent    : int=0) -> str:
-        r"""
-        Recursively builds a SQL query for a logical expression tree.
+        r"""Recursively builds a SQL query for a logical expression tree.
 
         Converts nested boolean expressions (from WHERE or ASSUMING clauses) into SQL.
         Combines sub-expressions using UNION (for OR) or INTERSECT (for AND) operations
         to return a set of (foreign key, timestamp) pairs where the expression evaluates to true.
 
         Args:
-            `expr_dict` (`dict`): Parsed dictionary of the expression (can contain 'Op', 'Left', 'Right' keys or a single condition).
-            `ptable` (`str`): Name of the parent table.
-            `ppk` (`str`): Name of the primary key column in the parent table.
-            `indent` (`int`, optional): Indentation level for formatted SQL output, default is 0.
+            expr_dict (dict): Parsed dictionary of the expression (can contain 'Op',
+                'Left', 'Right' keys or a single condition).
+            ptable (str): Name of the parent table.
+            ppk (str): Name of the primary key column in the parent table.
+            indent (int, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
-            `expr_query` (`str`): SQL query returning (foreign key, timestamps pairs) where the expression is true.
+            expr_query (str): SQL query returning (foreign key, timestamps pairs) where the expression is true.
         """
-
-        # create division markers for formatted output 
+        # create division markers for formatted output
         div_line_expr1 = get_div_line("EXPR_START")
         div_line_expr2 = get_div_line("EXPR_END")
 
@@ -361,8 +352,8 @@ class TConverterPredQL(ConverterPredQL):
 
             expr_query = f"""
                 {div_line_expr1}
-                SELECT 
-                    fk, 
+                SELECT
+                    fk,
                     timestamp
                 FROM
                     ({left_expr}) left_expr
@@ -370,7 +361,7 @@ class TConverterPredQL(ConverterPredQL):
                 SELECT
                     fk,
                     timestamp
-                FROM 
+                FROM
                     ({right_expr}) right_expr
                 {div_line_expr2}
                 """
@@ -378,31 +369,29 @@ class TConverterPredQL(ConverterPredQL):
         else:
             expr_query = self.build_condition(expr_dict, ptable, ppk, indent+1)
         expr_query = textwrap.indent(expr_query, get_indent(indent))
-        
+
         return expr_query
 
 
-    def build_aggregation(self, 
+    def build_aggregation(self,
                           aggr_dict : dict,
-                          ptable    : str,  
+                          ptable    : str,
                           ppk       : str,
                           indent    : int=0) -> str:
-        r"""
-        Builds the SQL query for a PredQL aggregation over a time window.
+        r"""Builds the SQL query for a PredQL aggregation over a time window.
 
         Computes aggregations relative to prediction timestamps within a defined
         `[start, end)` time window.
 
         Args:
-            `aggr_dict` (`dict`): Parsed aggregation dictionary with Table, Start, End, MeasureUnit.
-            `ptable` (`str`): Name of the parent table.
-            `ppk` (`str`): Name of the primary key column in the parent table.
-            `indent` (`int`, optional): Indentation level for formatted SQL output, default is 0.
+            aggr_dict (dict): Parsed aggregation dictionary with Table, Start, End, MeasureUnit.
+            ptable (str): Name of the parent table.
+            ppk (str): Name of the primary key column in the parent table.
+            indent (int, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
-            `aggr_query` (`str`): SQL query returning (fk, col_for_comp, timestamp) where col_for_comp is aggregated.
+            aggr_query (str): SQL query returning (fk, col_for_comp, timestamp) where col_for_comp is aggregated.
         """
-        
         # extract aggregation parameters
         table = aggr_dict["Table"]
         start = int(aggr_dict["Start"])
@@ -424,7 +413,7 @@ class TConverterPredQL(ConverterPredQL):
         # build temporal aggregation query
         aggr_query = f"""
             {div_line_aggr1}
-            SELECT 
+            SELECT
                 parent.{ppk} AS fk,
                 {aggr_func("aggr_tbl")} AS comp_col,
                 time.timestamp AS timestamp
@@ -434,13 +423,13 @@ class TConverterPredQL(ConverterPredQL):
                 timestamp_df time
             LEFT JOIN
                 {table} aggr_tbl
-            ON 
+            ON
                 aggr_tbl.{fk} = parent.{ppk}
             AND
                 aggr_tbl.{time_column} >= time.timestamp + INTERVAL '{start} {measure_unit}'
             AND
                 aggr_tbl.{time_column} < time.timestamp + INTERVAL '{end} {measure_unit}'
-            GROUP BY 
+            GROUP BY
                 time.timestamp, parent.{ppk}
             {div_line_aggr2}
             """
@@ -451,19 +440,17 @@ class TConverterPredQL(ConverterPredQL):
 
     def find_time_column(self,
                          table_name : str) -> str:
-        r"""
-        Finds the name of the time column for a given table.
+        r"""Finds the name of the time column for a given table.
 
         Args:
-            `table_name` (`str`): Name of the table whose time column is to be found.
+            table_name (str): Name of the table whose time column is to be found.
 
         Returns:
-            `out` (`str`): The name of the time column associated with the specified table.
+            out (str): The name of the time column associated with the specified table.
         """
-        
         table = self.db.table_dict[table_name]
 
         return table.time_col
-    
 
-        
+
+

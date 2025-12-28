@@ -1,8 +1,12 @@
-import pytest
-import pandas as pd
+"""Pytest fixtures and configuration for PredQL tests."""
+
 import numpy as np
+import pandas as pd
+import pytest
 from relbench.base import Database, Table
-from predql.converter import TConverterPredQL, SConverterPredQL
+
+from predql.converter import SConverterPredQL, TConverterPredQL
+
 
 @pytest.fixture(scope="session")
 def test_db():
@@ -13,19 +17,19 @@ def test_db():
     NONE_PROB = 0.2
 
     rng = np.random.default_rng(SEED)
-    
+
     student_id = np.arange(N)
-    name = ["oleksii", "jakub", "karel", "mark", "k", 
+    name = ["oleksii", "jakub", "karel", "mark", "k",
             "anna", "alex", "maryna", "tomas", "michal"]
     students_df = pd.DataFrame({"studentId" : student_id,
                                 "name"      : name,})
-    
+
     students_table = Table(
-        df=students_df, 
-        fkey_col_to_pkey_table=None, 
-        pkey_col="studentId", 
+        df=students_df,
+        fkey_col_to_pkey_table=None,
+        pkey_col="studentId",
         time_col=None)
-    
+
     study_year = rng.integers(low=1, high=5, size=N, endpoint=True)
     study_year = study_year.astype(float)
     study_year[rng.random(N) < NONE_PROB] = np.nan
@@ -38,7 +42,7 @@ def test_db():
         df=study_inf_df,
         fkey_col_to_pkey_table={"studentId" : "students"},
         pkey_col="studentId",
-        time_col=None) 
+        time_col=None)
 
     grade_id = np.arange(M)
     gr_student_id = np.tile(student_id, REPS)
@@ -47,20 +51,20 @@ def test_db():
     date = pd.to_datetime("2025-01-01") + pd.to_timedelta(rng.integers(0, 30, size=M), unit="D")
     grade = grade.astype(float)
     grade[rng.random(M) < NONE_PROB] = np.nan
-    
+
     grades_df = pd.DataFrame({
         "gradeId"   : grade_id,
         "studentId" : gr_student_id,
         "name"      : gr_name,
         "grade"     : grade,
         "date"      : date})
-    
+
     grades_table = Table(
-        df=grades_df, 
+        df=grades_df,
         fkey_col_to_pkey_table={"studentId" : "students"},
         pkey_col="gradeId",
         time_col="date")
-    
+
     # print(students_table)
     # print(grades_table)
 
@@ -69,7 +73,7 @@ def test_db():
         "grades"   : grades_table,
         "studyInf" : study_inf_table}
 
-    db = Database(table_dict=table_dict)    
+    db = Database(table_dict=table_dict)
     return db
 
 @pytest.fixture(scope="session")

@@ -1,13 +1,15 @@
+"""Helper utilities for PredQL showcase notebooks."""
+
+from antlr4 import CommonTokenStream, InputStream, TerminalNode
 from relbench.base import Database
 
-from antlr4 import TerminalNode, InputStream, CommonTokenStream
-
+from predql.converter import ConverterPredQL, SConverterPredQL, TConverterPredQL
 from predql.parser import LexerPredQL, ParserPredQL
 from predql.visitor import VisitorPredQL
-from predql.converter import ConverterPredQL, SConverterPredQL, TConverterPredQL 
+
 
 def print_tree(node, parser):
-   
+
     space = '  '
 
     if isinstance(node, TerminalNode):
@@ -25,7 +27,7 @@ def parse_query(query: str):
     parser = ParserPredQL(token_stream)
 
     tree = parser.query()
-    
+
     print("=== Input Query ===")
     print(query)
     print("=== Parse Tree ===")
@@ -38,9 +40,9 @@ def parse_query(query: str):
 
 class ConverterShowcaseHelper:
     predql_converter: ConverterPredQL
-    
+
     def __init__(self, db: Database, timestamps=None):
-        
+
         if timestamps is not None:
             self.predql_converter = TConverterPredQL(db, timestamps)
         else:

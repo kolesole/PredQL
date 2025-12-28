@@ -1,16 +1,62 @@
+[build-system]
+requires = ["flit_core>=3.4"]
+build-backend = "flit_core.buildapi"
+
 [project]
-name = "pql"
+name = "predql"
 version = "0.1.0"
-description = "Add your description here"
+description = "PredQL: A Framework which provides predictive query language"
+authors = [{ name = "Oleksii Kolesnichenko", email = "oleksii.kolesnichenko@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.12"
+keywords = ["predictive-query-language", "sql", "temporal-data", "relational-learning"]
 dependencies = [
-    "antlr4-python3-runtime>=4.13.2",
-    "pandas>=2.3.3",
     "relbench>=1.1.0",
+    "pandas>=2.2.0",
+    "antlr4-python3-runtime>=4.13.2",
+    "duckdb>=1.0.0"
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0"
+]
 notebook = [
     "ipykernel>=7.1.0",
+    "jupyter>=1.0.0",
+]
+dev = [
+    "antlr4-tools>=0.2.1",
+    "ruff",
+]
+
+[project.urls]
+Repository = "https://github.com/kolesole/PredQL"
+Issues = "https://github.com/kolesole/PredQL/issues"
+
+[tool.ruff]
+line-length = 121
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"predql/parser/gen/**" = ["E", "F", "W", "D"] 
+"__init__.py" = ["F401"]
+"predql/visitor/**/*.py" = ["D"]
+"tests/**/*.py" = ["D", "E501"]
+"showcase/**/*.py" = ["D", "E501"]
+"showcase/**/*.ipynb" = ["D", "E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.10",
 ]

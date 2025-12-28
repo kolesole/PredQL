@@ -1,3 +1,5 @@
+"""Converter modules for PredQL to SQL translation."""
+
 from predql.converter.converter import ConverterPredQL
 from predql.converter.static_converter import SConverterPredQL
 from predql.converter.temporal_converter import TConverterPredQL

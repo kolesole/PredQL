@@ -1,5 +1,8 @@
-import pytest
+"""Tests for temporal converter condition handling."""
+
 import pandas as pd
+import pytest
+
 
 # @pytest.mark.parametrize("pql_aggr, sql_aggr", [
 #     ("AVG", "AVG"),
@@ -19,7 +22,7 @@ def test_num_cond_tmp(temporal_converter,
                       pql_cond,
                       sql_cond):
     pql_query = f"""
-        PREDICT AVG(grades.grade, 0, 10, DAYS) {pql_cond} 2.5 
+        PREDICT AVG(grades.grade, 0, 10, DAYS) {pql_cond} 2.5
         FOR EACH students.studentId;
     """
     res_table = temporal_converter.convert(pql_query)
@@ -29,36 +32,36 @@ def test_num_cond_tmp(temporal_converter,
     res_time_col = res_table.time_col
 
     sql_query = f"""
-        SELECT 
+        SELECT
             s.studentId AS fk,
             t.timestamp AS timestamp,
             CASE
                 WHEN AVG(g.grade) {sql_cond} 2.5 THEN true
                 ELSE false
             END AS label
-        FROM 
+        FROM
             students s
-        CROSS JOIN 
+        CROSS JOIN
             timestamp_df t
         LEFT JOIN
             grades g
-        ON 
+        ON
             g.studentId = s.studentId
         AND
             g.date >= t.timestamp + INTERVAL '0 DAY'
-        AND 
+        AND
             g.date < t.timestamp + INTERVAL '10 DAY'
         GROUP BY
             s.studentId, t.timestamp
         ORDER BY
-            t.timestamp, s.studentId;  
+            t.timestamp, s.studentId;
     """
     ref_df = temporal_converter.conn.sql(sql_query).df()
     ref_time_col = "timestamp"
 
     pd.testing.assert_frame_equal(res_df, ref_df)
-    assert res_fkey_col_to_pkey_table == None
-    assert res_pkey_col == None
+    assert res_fkey_col_to_pkey_table is None
+    assert res_pkey_col is None
     assert res_time_col == ref_time_col
 
 # NOTE: DOESN'T WORK WITHOUT STATIC WHERE
@@ -85,28 +88,28 @@ def test_str_cond_tmp(temporal_converter,
     res_time_col = res_table.time_col
 
     sql_query = f"""
-        SELECT 
+        SELECT
             s.studentId AS fk,
             t.timestamp AS timestamp,
             AVG(g.grade) AS label
-        FROM 
+        FROM
             students s
-        CROSS JOIN 
+        CROSS JOIN
             timestamp_df t
         LEFT JOIN
             grades g
-        ON 
+        ON
             g.studentId = s.studentId
         AND
             g.date >= t.timestamp + INTERVAL '0 DAY'
-        AND 
+        AND
             g.date < t.timestamp + INTERVAL '10 DAY'
         WHERE
             s.name {sql_cond("k")}
         GROUP BY
             s.studentId, t.timestamp
         ORDER BY
-            t.timestamp, s.studentId;  
+            t.timestamp, s.studentId;
     """
     ref_df = temporal_converter.conn.sql(sql_query).df()
     ref_time_col = "timestamp"
@@ -115,10 +118,10 @@ def test_str_cond_tmp(temporal_converter,
     print(ref_df)
 
     pd.testing.assert_frame_equal(res_df, ref_df)
-    assert res_fkey_col_to_pkey_table == None
-    assert res_pkey_col == None
+    assert res_fkey_col_to_pkey_table is None
+    assert res_pkey_col is None
     assert res_time_col == ref_time_col
-    
+
 #TODO: FIX PROBLEM WITH <<IS NULL>>
 @pytest.mark.parametrize("pql_cond, sql_cond", [
     ("IS NOT NULL", "IS NOT NULL"),
@@ -138,30 +141,30 @@ def test_null_cond_tmp(temporal_converter,
     res_time_col = res_table.time_col
 
     sql_query = f"""
-        SELECT 
+        SELECT
             s.studentId AS fk,
             t.timestamp AS timestamp,
             CASE
-                WHEN ARRAY_AGG(g.grade ORDER BY g.date)[1] {sql_cond} 
+                WHEN ARRAY_AGG(g.grade ORDER BY g.date)[1] {sql_cond}
                 THEN true
                 ELSE false
             END AS label
-        FROM 
+        FROM
             students s
-        CROSS JOIN 
+        CROSS JOIN
             timestamp_df t
         LEFT JOIN
             grades g
-        ON 
+        ON
             g.studentId = s.studentId
         AND
             g.date >= t.timestamp + INTERVAL '0 DAY'
-        AND 
+        AND
             g.date < t.timestamp + INTERVAL '10 DAY'
         GROUP BY
             s.studentId, t.timestamp
         ORDER BY
-            t.timestamp, s.studentId;  
+            t.timestamp, s.studentId;
     """
     ref_df = temporal_converter.conn.sql(sql_query).df()
     ref_time_col = "timestamp"
@@ -171,7 +174,6 @@ def test_null_cond_tmp(temporal_converter,
     print(res_df)
 
     pd.testing.assert_frame_equal(res_df, ref_df)
-    assert res_fkey_col_to_pkey_table == None
-    assert res_pkey_col == None
+    assert res_fkey_col_to_pkey_table is None
+    assert res_pkey_col is None
     assert res_time_col == ref_time_col
-    

@@ -1,15 +1,18 @@
+"""Utility functions for building SQL conditions and aggregations."""
 
 def build_num_condition(cond_dict : dict):
+    """Build SQL numeric comparison condition from parsed dictionary."""
     tmp = cond_dict["N"]
     N = float(tmp) if "." in tmp else int(tmp)
 
     comp_op = cond_dict["CompOp"]
 
     return lambda column : f"{column} {comp_op} {N}"
-    
+
 
 
 def build_str_condition(cond_dict : dict):
+    """Build SQL string comparison condition from parsed dictionary."""
     s = cond_dict["String"].strip("'\"")
     comp_op = cond_dict["CompOp"].lower()
 
@@ -33,12 +36,14 @@ def build_str_condition(cond_dict : dict):
 
 
 def build_null_condition(cond_dict : dict):
+    """Build SQL NULL check condition from parsed dictionary."""
     check_op = cond_dict["CheckOp"].upper()
-    
+
     return lambda column : f"{column} {check_op}"
 
 
 def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk : str=None):
+    """Build SQL aggregation function from parsed dictionary."""
     aggr_type = aggr_dict["AggrType"].lower()
     column = aggr_dict["Column"]
 
@@ -62,26 +67,26 @@ def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk
 
                 return lambda table : f"""
                     (
-                    SELECT 
+                    SELECT
                         ARRAY_AGG(freq_tbl.val ORDER BY freq_tbl.freq DESC)
                     FROM (
-                        SELECT 
+                        SELECT
                             in_tbl.{column} AS val,
                             COUNT(*) AS freq
-                        FROM 
+                        FROM
                             {in_table} in_tbl
-                        WHERE 
+                        WHERE
                             in_tbl.{time_column} >= time.timestamp + INTERVAL '{start} {measure_unit}'
-                        AND 
+                        AND
                             in_tbl.{time_column} <  time.timestamp + INTERVAL '{end} {measure_unit}'
-                        AND 
+                        AND
                             in_tbl.{fk} = parent.{ppk}
                         GROUP BY in_tbl.{column}
                         ) freq_tbl
                     )
-                    """ 
+                    """
             else:
-                return lambda table : f"ARRAY_AGG(DISTINCT {table}.{column})" 
+                return lambda table : f"ARRAY_AGG(DISTINCT {table}.{column})"
         case "max":
             return lambda table : f"MAX({table}.{column})"
         case "min":
@@ -92,9 +97,11 @@ def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk
             raise ValueError(f"Unknown aggregation type: {aggr_type}")
 
 def get_div_line(message):
+    """Generate a division line with message for SQL formatting."""
     return f"{'--' * 3}{message}{'--' * 3}"
 
 def get_indent(indent):
+    """Generate indentation spaces for SQL formatting."""
     return " " * indent
 
 
