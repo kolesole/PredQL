@@ -1,14 +1,16 @@
 """Tests for static converter WHERE clause handling."""
 
+from io import StringIO
+
 import pandas as pd
 import pytest
 
 
 def test_where_stat(static_converter):
     pql_query = """
-        PREDICT studyInf.favSubject
+        PREDICT studyInf.mainInterest
         FOR EACH students.studentId
-        WHERE studyInf.year > 1;
+        WHERE studyInf.studyYear <= 3;
     """
     res_table = static_converter.convert(pql_query)
     res_df = res_table.df()
@@ -16,43 +18,35 @@ def test_where_stat(static_converter):
     res_pkey_col = res_table.pkey_col
     res_time_col = res_table.time_col
 
-    sql_query = """
-        SELECT
-            s.studentId AS fk,
-            si.favSubject AS label
-        FROM
-            students s
-        JOIN
-            studyInf si
-        ON
-            si.studentId = s.studentId
-        WHERE
-            si.year > 1
-        ORDER BY
-            s.studentId;
+    ref_data = """
+        fk, label
+        0,  AI
     """
-    ref_df = static_converter.conn.sql(sql_query).df()
 
-    print(res_df)
-    print(ref_df)
-
-    pd.testing.assert_frame_equal(res_df, ref_df)
+    ref_df = pd.read_csv(StringIO(ref_data), 
+                         skipinitialspace=True, 
+                         na_values=['nan', 'NaN', 'NONE', ''])
+    
+    pd.testing.assert_frame_equal(res_df, 
+                                  ref_df, 
+                                  check_dtype=False,
+                                  atol=1e-5)
     assert res_fkey_col_to_pkey_table is None
     assert res_pkey_col is None
     assert res_time_col is None
 
 
-@pytest.mark.parametrize("pql_log_op, sql_log_op", [
-    ("AND", "AND"),
-    ("OR", "OR")
+@pytest.mark.parametrize("pql_op", [
+    ("AND"),
+    ("OR")
 ])
 def test_nested_where_stat(static_converter,
-                           pql_log_op,
-                           sql_log_op):
+                           pql_op):
     pql_query = f"""
-        PREDICT studyInf.favSubject
+        PREDICT studyInf.mainInterest
         FOR EACH students.studentId
-        WHERE studyInf.year > 1 {pql_log_op} students.name CONTAINS "k";
+        WHERE (studyInf.studyYear >= 1 {pql_op} students.name CONTAINS "e")
+        OR studyInf.studyYear IS NULL;
     """
     res_table = static_converter.convert(pql_query)
     res_df = res_table.df()
@@ -60,27 +54,29 @@ def test_nested_where_stat(static_converter,
     res_pkey_col = res_table.pkey_col
     res_time_col = res_table.time_col
 
-    sql_query = f"""
-        SELECT
-            s.studentId AS fk,
-            si.favSubject AS label
-        FROM
-            students s
-        JOIN
-            studyInf si
-        ON
-            si.studentId = s.studentId
-        WHERE
-            si.year > 1 {sql_log_op} s.name LIKE '%k%'
-        ORDER BY
-            s.studentId;
-    """
-    ref_df = static_converter.conn.sql(sql_query).df()
+    match pql_op:
+        case "AND":
+            ref_data = """
+                fk, label
+                0,  AI
+                2,  SI
+            """
+        case "OR":
+            ref_data = """
+                fk, label
+                0,  AI
+                1,  DS
+                2,  SI
+            """
 
-    print(res_df)
-    print(ref_df)
-
-    pd.testing.assert_frame_equal(res_df, ref_df)
+    ref_df = pd.read_csv(StringIO(ref_data), 
+                         skipinitialspace=True, 
+                         na_values=['nan', 'NaN', 'NONE', ''])
+    
+    pd.testing.assert_frame_equal(res_df, 
+                                  ref_df, 
+                                  check_dtype=False,
+                                  atol=1e-5)
     assert res_fkey_col_to_pkey_table is None
     assert res_pkey_col is None
     assert res_time_col is None
