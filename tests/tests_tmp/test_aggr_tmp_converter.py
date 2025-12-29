@@ -14,8 +14,7 @@ import json
     ("COUNT"),
     ("COUNT_DISTINCT"),
     ("FIRST"),
-    ("LAST"),
-    ("LIST_DISTINCT")
+    ("LAST")
 ])
 def test_aggr_tmp(temporal_converter,
                   pql_aggr):
@@ -110,7 +109,40 @@ def test_aggr_tmp(temporal_converter,
                 1,  2025-01-10, 4.0
                 2,  2025-01-10, nan
             """
-        case "LIST_DISTINCT":
+    
+    ref_df = pd.read_csv(StringIO(ref_data), 
+                             skipinitialspace=True, 
+                             parse_dates=["timestamp"],
+                             na_values=['nan', 'NaN', 'NONE', ''])
+    
+    pd.testing.assert_frame_equal(res_df, 
+                                  ref_df, 
+                                  check_dtype=False,
+                                  atol=1e-5)
+        
+    assert res_fkey_col_to_pkey_table is None
+    assert res_pkey_col is None
+    assert res_time_col == "timestamp"
+
+@pytest.mark.parametrize("list_distinct_op", [
+    (""),
+    ("CLASSIFY"),
+    ("RANK TOP 1")
+])
+def test_list_distinct_tmp(temporal_converter,
+                           list_distinct_op):
+    pql_query = f"""
+        PREDICT LIST_DISTINCT(grades.grade, 0, 10, DAYS) {list_distinct_op}
+        FOR EACH students.studentId;
+    """
+    res_table = temporal_converter.convert(pql_query)
+    res_df = res_table.df()
+    res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
+    res_pkey_col = res_table.pkey_col
+    res_time_col = res_table.time_col
+
+    match list_distinct_op:
+        case "" | "CLASSIFY":
             ref_data = [
                 {"fk": 0, "timestamp": "2025-01-01", "label": [2.0, 1.0, 0.0]}, # [2, 1, nan]
                 {"fk": 1, "timestamp": "2025-01-01", "label": [2.0]},
@@ -119,25 +151,24 @@ def test_aggr_tmp(temporal_converter,
                 {"fk": 1, "timestamp": "2025-01-10", "label": [1.0, 4.0]},
                 {"fk": 2, "timestamp": "2025-01-10", "label": pd.NA},
             ]
+        case "RANK TOP 1":
+            ref_data = [
+                {"fk": 0, "timestamp": "2025-01-01", "label": [2.0]}, 
+                {"fk": 1, "timestamp": "2025-01-01", "label": [2.0]},
+                {"fk": 2, "timestamp": "2025-01-01", "label": [0.0]}, # [nan]
+                {"fk": 0, "timestamp": "2025-01-10", "label": [4.0]},
+                {"fk": 1, "timestamp": "2025-01-10", "label": [1.0]},
+                {"fk": 2, "timestamp": "2025-01-10", "label": pd.NA},
+            ]
 
-    if pql_aggr == "LIST_DISTINCT":
-        ref_df = pd.DataFrame(ref_data,)
-        ref_df["timestamp"] = pd.to_datetime(ref_df["timestamp"])
+    ref_df = pd.DataFrame(ref_data,)
+    ref_df["timestamp"] = pd.to_datetime(ref_df["timestamp"])
 
-        actual = json.loads(res_df.to_json(orient="records", double_precision=5))
-        expected = json.loads(ref_df.to_json(orient="records", double_precision=5))
+    actual = json.loads(res_df.to_json(orient="records", double_precision=5))
+    expected = json.loads(ref_df.to_json(orient="records", double_precision=5))
 
-        assert actual == expected
-    else:
-        ref_df = pd.read_csv(StringIO(ref_data), 
-                             skipinitialspace=True, 
-                             parse_dates=["timestamp"],
-                             na_values=['nan', 'NaN', 'NONE', ''])
-        pd.testing.assert_frame_equal(res_df, 
-                                    ref_df, 
-                                    check_dtype=False,
-                                    atol=1e-5)
-        
+    assert actual == expected
     assert res_fkey_col_to_pkey_table is None
     assert res_pkey_col is None
     assert res_time_col == "timestamp"
+
