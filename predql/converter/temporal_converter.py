@@ -156,8 +156,9 @@ class TConverterPredQL(ConverterPredQL):
         assuming_query = f"""
             {div_line_ass1}
             SELECT
-                help.{ppk},
-                help.timestamp
+                help.{ppk} AS fk,
+                help.timestamp,
+                help.label 
             FROM
                 (
             {div_line_help1}
