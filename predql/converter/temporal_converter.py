@@ -158,7 +158,7 @@ class TConverterPredQL(ConverterPredQL):
             SELECT
                 help.{ppk} AS fk,
                 help.timestamp,
-                help.label 
+                help.label
             FROM
                 (
             {div_line_help1}

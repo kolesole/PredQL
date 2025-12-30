@@ -23,12 +23,12 @@ def test_where_stat(static_converter):
         0,  AI
     """
 
-    ref_df = pd.read_csv(StringIO(ref_data), 
-                         skipinitialspace=True, 
+    ref_df = pd.read_csv(StringIO(ref_data),
+                         skipinitialspace=True,
                          na_values=['nan', 'NaN', 'NONE', ''])
-    
-    pd.testing.assert_frame_equal(res_df, 
-                                  ref_df, 
+
+    pd.testing.assert_frame_equal(res_df,
+                                  ref_df,
                                   check_dtype=False,
                                   atol=1e-5)
     assert res_fkey_col_to_pkey_table is None
@@ -69,12 +69,12 @@ def test_nested_where_stat(static_converter,
                 2,  SI
             """
 
-    ref_df = pd.read_csv(StringIO(ref_data), 
-                         skipinitialspace=True, 
+    ref_df = pd.read_csv(StringIO(ref_data),
+                         skipinitialspace=True,
                          na_values=['nan', 'NaN', 'NONE', ''])
-    
-    pd.testing.assert_frame_equal(res_df, 
-                                  ref_df, 
+
+    pd.testing.assert_frame_equal(res_df,
+                                  ref_df,
                                   check_dtype=False,
                                   atol=1e-5)
     assert res_fkey_col_to_pkey_table is None

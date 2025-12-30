@@ -1,11 +1,11 @@
-import numpy as np
+from io import StringIO
+
 import pandas as pd
 import pytest
 from relbench.base import Database, Table
 
 from predql.converter import SConverterPredQL, TConverterPredQL
 
-from io import StringIO
 
 @pytest.fixture(scope="session")
 def test_db():
@@ -15,7 +15,7 @@ def test_db():
     1,         jakub
     2,         karel
     """
-    students_df = pd.read_csv(StringIO(students_data), 
+    students_df = pd.read_csv(StringIO(students_data),
                               skipinitialspace=True,
                               na_values=['nan', 'NaN', 'NONE', ''])
     students_table = Table(
@@ -32,7 +32,7 @@ def test_db():
     1,         P,          2025-01-10
     2,         nan,        2025-01-01
     """
-    fav_subjects_df = pd.read_csv(StringIO(fav_subjects_data), 
+    fav_subjects_df = pd.read_csv(StringIO(fav_subjects_data),
                                skipinitialspace=True,
                                parse_dates=["date"],
                                na_values=['nan', 'NaN', 'NONE', ''])
@@ -41,14 +41,14 @@ def test_db():
         fkey_col_to_pkey_table={"studentId" : "students"},
         pkey_col=None,
         time_col="date")
-    
+
     study_inf_data = """
     studentId, studyYear, mainInterest
     0,         3,         AI
     1,         7,         DS
     2,         nan,       SI
     """
-    study_inf_df = pd.read_csv(StringIO(study_inf_data), 
+    study_inf_df = pd.read_csv(StringIO(study_inf_data),
                                skipinitialspace=True,
                                na_values=['nan', 'NaN', 'NONE', ''])
     study_inf_table = Table(
@@ -72,8 +72,8 @@ def test_db():
     10,      1,         4,     2025-01-19
     11,      2,         nan,   2025-01-03
     """
-    grades_df = pd.read_csv(StringIO(grades_data), 
-                            skipinitialspace=True, 
+    grades_df = pd.read_csv(StringIO(grades_data),
+                            skipinitialspace=True,
                             parse_dates=["date"],
                             na_values=['nan', 'NaN', 'NONE', ''])
     grades_table = Table(

@@ -5,7 +5,6 @@ from io import StringIO
 import pandas as pd
 import pytest
 
-
 # def test_stat_where_tmp(temporal_converter):
 #     pql_query = """
 #         PREDICT AVG(grades.grade WHERE studyInf.favSubject CONTAINS "S", 0, 10, DAYS)
@@ -76,13 +75,13 @@ def test_common_simple_where_tmp(temporal_converter):
         1,  2025-01-10, 2.0
     """
 
-    ref_df = pd.read_csv(StringIO(ref_data), 
-                         skipinitialspace=True, 
+    ref_df = pd.read_csv(StringIO(ref_data),
+                         skipinitialspace=True,
                          parse_dates=["timestamp"],
                          na_values=['nan', 'NaN', 'NONE', ''])
-    
-    pd.testing.assert_frame_equal(res_df, 
-                                  ref_df, 
+
+    pd.testing.assert_frame_equal(res_df,
+                                  ref_df,
                                   check_dtype=False,
                                   atol=1e-5)
     assert res_fkey_col_to_pkey_table is None
@@ -99,7 +98,7 @@ def test_common_nested_where_tmp(temporal_converter,
     pql_query = f"""
         PREDICT AVG(grades.grade, 0, 10, DAYS)
         FOR EACH students.studentId
-        WHERE LAST(grades.grade, 0, 10, DAYS) IS NOT NULL 
+        WHERE LAST(grades.grade, 0, 10, DAYS) IS NOT NULL
         {pql_op} (FIRST(favSubjects.subject, 0, 10, DAYS) IS NULL
         OR FIRST(favSubjects.subject, 0, 10, DAYS) CONTAINS "P");
     """
@@ -127,13 +126,13 @@ def test_common_nested_where_tmp(temporal_converter,
                 2,  2025-01-10, nan
             """
 
-    ref_df = pd.read_csv(StringIO(ref_data), 
-                         skipinitialspace=True, 
+    ref_df = pd.read_csv(StringIO(ref_data),
+                         skipinitialspace=True,
                          parse_dates=["timestamp"],
                          na_values=['nan', 'NaN', 'NONE', ''])
-    
-    pd.testing.assert_frame_equal(res_df, 
-                                  ref_df, 
+
+    pd.testing.assert_frame_equal(res_df,
+                                  ref_df,
                                   check_dtype=False,
                                   atol=1e-5)
     assert res_fkey_col_to_pkey_table is None

@@ -1,9 +1,10 @@
 """Tests for temporal converter aggregation functions."""
 
+import json
 from io import StringIO
+
 import pandas as pd
 import pytest
-import json
 
 
 @pytest.mark.parametrize("pql_aggr", [
@@ -55,7 +56,7 @@ def test_aggr_tmp(temporal_converter,
                 0,  2025-01-01, 1.0
                 1,  2025-01-01, 2.0
                 2,  2025-01-01, nan
-                0,  2025-01-10, 4.0 
+                0,  2025-01-10, 4.0
                 1,  2025-01-10, 1.0
                 2,  2025-01-10, nan
             """
@@ -75,7 +76,7 @@ def test_aggr_tmp(temporal_converter,
                 0,  2025-01-01, 5.0
                 1,  2025-01-01, 1.0
                 2,  2025-01-01, 0.0
-                0,  2025-01-10, 1.0 
+                0,  2025-01-10, 1.0
                 1,  2025-01-10, 3.0
                 2,  2025-01-10, 0.0
             """
@@ -85,7 +86,7 @@ def test_aggr_tmp(temporal_converter,
                 0,  2025-01-01, 2.0
                 1,  2025-01-01, 1.0
                 2,  2025-01-01, 0.0
-                0,  2025-01-10, 1.0 
+                0,  2025-01-10, 1.0
                 1,  2025-01-10, 2.0
                 2,  2025-01-10, 0.0
             """
@@ -95,7 +96,7 @@ def test_aggr_tmp(temporal_converter,
                 0,  2025-01-01, 1.0
                 1,  2025-01-01, 2.0
                 2,  2025-01-01, nan
-                0,  2025-01-10, 4.0 
+                0,  2025-01-10, 4.0
                 1,  2025-01-10, 1.0
                 2,  2025-01-10, nan
             """
@@ -105,21 +106,21 @@ def test_aggr_tmp(temporal_converter,
                 0,  2025-01-01, nan
                 1,  2025-01-01, 2.0
                 2,  2025-01-01, nan
-                0,  2025-01-10, 4.0 
+                0,  2025-01-10, 4.0
                 1,  2025-01-10, 4.0
                 2,  2025-01-10, nan
             """
-    
-    ref_df = pd.read_csv(StringIO(ref_data), 
-                             skipinitialspace=True, 
+
+    ref_df = pd.read_csv(StringIO(ref_data),
+                             skipinitialspace=True,
                              parse_dates=["timestamp"],
                              na_values=['nan', 'NaN', 'NONE', ''])
-    
-    pd.testing.assert_frame_equal(res_df, 
-                                  ref_df, 
+
+    pd.testing.assert_frame_equal(res_df,
+                                  ref_df,
                                   check_dtype=False,
                                   atol=1e-5)
-        
+
     assert res_fkey_col_to_pkey_table is None
     assert res_pkey_col is None
     assert res_time_col == "timestamp"
@@ -153,7 +154,7 @@ def test_list_distinct_tmp(temporal_converter,
             ]
         case "RANK TOP 1":
             ref_data = [
-                {"fk": 0, "timestamp": "2025-01-01", "label": [2.0]}, 
+                {"fk": 0, "timestamp": "2025-01-01", "label": [2.0]},
                 {"fk": 1, "timestamp": "2025-01-01", "label": [2.0]},
                 {"fk": 2, "timestamp": "2025-01-01", "label": [0.0]}, # [nan]
                 {"fk": 0, "timestamp": "2025-01-10", "label": [4.0]},

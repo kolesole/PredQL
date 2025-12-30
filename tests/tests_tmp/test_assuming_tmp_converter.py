@@ -3,7 +3,7 @@
 from io import StringIO
 
 import pandas as pd
-import pytest
+
 
 def test_assuming_tmp(temporal_converter):
     pql_query = """
@@ -28,13 +28,13 @@ def test_assuming_tmp(temporal_converter):
 
     print(res_df)
 
-    ref_df = pd.read_csv(StringIO(ref_data), 
-                         skipinitialspace=True, 
+    ref_df = pd.read_csv(StringIO(ref_data),
+                         skipinitialspace=True,
                          parse_dates=["timestamp"],
                          na_values=['nan', 'NaN', 'NONE', ''])
-    
-    pd.testing.assert_frame_equal(res_df, 
-                                  ref_df, 
+
+    pd.testing.assert_frame_equal(res_df,
+                                  ref_df,
                                   check_dtype=False,
                                   atol=1e-5)
     assert res_fkey_col_to_pkey_table is None
