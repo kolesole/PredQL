@@ -45,7 +45,6 @@ FOR EACH <entity_table>.<primary_key>
     ```sql
     <table>.<column> <num_condition>|<str_condition>|<null_condition>
     ```
-
     | Category    | Operators | Right side |
     | :---        | :---      | :--- |
     | **Numeric** | `!=`, `<`, `<=`, `==`, `>`, `>=` | NUMBER
@@ -108,7 +107,6 @@ FOR EACH <entity_table>.<primary_key>
     ```sql
     <aggregation> <num_condition>|<str_condition>|<null_condition>
     ```
-
     `<num_condition>`, `<str_condition>`, `<null_condition>` - The same as in static
 
 - `<aggregation>` design:
@@ -116,9 +114,8 @@ FOR EACH <entity_table>.<primary_key>
     ```sql
     <aggr_func>(<target_table>.<target_column>, <start>, <end>, <measure_unit>) [<RANK TOP K>|<CLASSIFY>]
     ```
-    
-    - `<RANK TOP K>` and `<CLASSIFY>` apply only to `LIST_DISTINCT`; `K` must be a positive integer
-    - `<RANK TOP K>` returns the first `K` elements (by frequency), `<CLASSIFY>` or omitting both returns all elements
+    `<RANK TOP K>` and `<CLASSIFY>` apply only to `LIST_DISTINCT`; `K` must be a positive integer\
+    `<RANK TOP K>` returns the first `K` elements (by frequency), `<CLASSIFY>` or omitting both returns all elements
     
 - Available aggregation functions:
 
