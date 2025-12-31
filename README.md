@@ -1,16 +1,19 @@
 # PredQL 
 
-**PredQL** (Predictive Query Language) is a Python framework designed to simplify working with databases in the context of **Relational Deep Learning (RDL)**.
+**PredQL** (Predictive Query Language) is a Python framework that simplifies working with databases for **Relational Deep Learning (RDL)**.
 
-It enables writing shorter, more expressive queries by abstracting away the complexity of temporal joins and sophisticated aggregations.
+It lets you write shorter, more expressive queries by abstracting temporal joins and complex aggregations.
 
 ## 🧠 Features
 
 - 🎯 **ANTLR-based Parser** - Lexer and parser for PredQL syntax
+
 - 🌳 **Parse Tree Visitor** - Transforms PredQL queries into structured dictionaries
+
 - 🔀 **Dual Converters** - Static and temporal SQL conversion
   - 📌 `SConverterPredQL` - Non-temporal predictions
   - ⏰ `TConverterPredQL` - Time-window based temporal predictions with automatic time bucketing
+
 - ⚙️ **Automatic Execution** - Executes generated SQL and returns results as ready-to-use table objects
 
 ## ⚙️ Installation
@@ -35,22 +38,25 @@ FOR EACH <entity_table>.<primary_key>
 
 #### 🗒️ NOTES
 
-- All tables which are used must contain `<foreign_key>` which is connected with `<primary_key>` of `<entity_table>`
+- Every table you reference must contain a `<foreign_key>` that matches the `<entity_table>` `<primary_key>`
 
-- `<condition>` design: 
+- `<condition>` design:
 
     ```sql
     <table>.<column> <num_condition>|<str_condition>|<null_condition>
     ```
+
     | Category    | Operators | Right side |
     | :---        | :---      | :--- |
     | **Numeric** | `!=`, `<`, `<=`, `==`, `>`, `>=` | NUMBER
     | **String** | `CONTAINS`, `NOT CONTAINS`, `LIKE`, `NOT LIKE`, `STARTS WITH`, `ENDS WITH`, `=` | STRING
     | **Nullability** | `IS NULL`, `IS NOT NULL` | |
 
-#### 💡 Example 
+- Static converter returns a table with:
+    - `fk` - `<primary_key>` from `<entity_table>`
+    - `label` - predicted value
 
-Predicting student favorite subject:
+#### 💡 Examples 
 
 ```python
 from predql.converter import SConverterPredQL
@@ -62,13 +68,24 @@ db = Database(...)
 # create converter
 converter = SConverterPredQL(db)
 
-# convert and execute PredQL query
-result_table = converter.convert("""
-    PREDICT studentInf.favSubject
-    FOR EACH students.studentId;
-""")
+# predicting student favorite subject
+example_query1 = """                   
+    PREDICT studentInf.favSubject     
+    FOR EACH students.studentId;     
+"""                                   
+result_table1 = converter.convert(example_query1)
 
-df = result.df() # get dataframe object
+# predicting student favorite subject for students older than 20
+example_query2 = """                   
+    PREDICT studentInf.favSubject     
+    FOR EACH students.studentId
+    WHERE studentInf.age > 20;     
+"""                                   
+result_table2 = converter.convert(example_query2)
+
+# get dataframes
+df1 = result_table1.df()
+df2 = result_table2.df()
 ```
 
 ### ⏰ Temporal Query
@@ -84,76 +101,94 @@ FOR EACH <entity_table>.<primary_key>
 
 #### 🗒️ NOTES
 
-- All tables which are used must contain `<foreign_key>` which is connected with `<primary_key>` of `<entity_table>`
+- Every table you reference must contain a `<foreign_key>` that matches the `<entity_table>` `<primary_key>`
 
-- `<condition>` the same as in static 
+- `<condition>` design:
+
+    ```sql
+    <aggregation> <num_condition>|<str_condition>|<null_condition>
+    ```
+
+    `<num_condition>`, `<str_condition>`, `<null_condition>` - The same as in static
 
 - `<aggregation>` design:
 
     ```sql
-    <aggr_func>(<target_table>.<target_column>[, <start>, <end>, <measure_unit>] [WHERE <condition>|<nested_condition>])
+    <aggr_func>(<target_table>.<target_column>, <start>, <end>, <measure_unit>) [<RANK TOP K>|<CLASSIFY>]
     ```
-
+    
+    - `<RANK TOP K>` and `<CLASSIFY>` apply only to `LIST_DISTINCT`; `K` must be a positive integer
+    - `<RANK TOP K>` returns the first `K` elements (by frequency), `<CLASSIFY>` or omitting both returns all elements
+    
 - Available aggregation functions:
 
-    | Function | Description
-    | :--- | :--- |
-    | `AVG` | Average value 
-    | `MAX` | Maximum value 
-    | `MIN` | Minimum value 
-    | `SUM` | Sum of values 
-    | `COUNT` | Count of non-null values
-    | `COUNT_DISTINCT` | Count of distinct values
-    | `FIRST` | First value (ordered by time)
-    | `LAST` | Last value (ordered by time) 
-    | `LIST_DISTINCT` | List of distinct values ordered by count
+    | Function | Description | Can be used in condition
+    | :--- | :--- | :--- |
+    | `AVG` | Average value| ✅
+    | `MAX` | Maximum value| ✅
+    | `MIN` | Minimum value| ✅
+    | `SUM` | Sum of values| ✅
+    | `COUNT` | Count of non-null values| ✅
+    | `COUNT_DISTINCT` | Count of distinct values| ✅
+    | `FIRST` | First value (ordered by time)| ✅
+    | `LAST` | Last value (ordered by time)| ✅
+    | `LIST_DISTINCT` | List of distinct values ordered by count| ❌
 
 - Time window parameters:
-  - `<start>` - Start offset must be `≤ 0` for `<ASSUMING>` and `≥ 0` for `<PREDICT>|<WHERE>`
-  - `<end>` - End offset must be `≤ 0` for `<ASSUMING>` and `≥ 0` for `<PREDICT>|<WHERE>` 
-  - `<measure_unit>` - Time unit: `YEARS`, `MONTHS`, `WEEKS`, `DAYS`, `HOURS`, `MINUTES`, `SECONDS`
-- Time window - `[<start>, <end>)`
 
-- `ASSUMING` clause - Filters data at the timestamp level (before aggregation)
-- `WHERE` clause - Filters data at the timestamp level ()
+    - `<start>` must be `≤ 0` for `ASSUMING` and `≥ 0` for `PREDICT`/`WHERE`
+    - `<end>` must be `≤ 0` for `ASSUMING` and `≥ 0` for `PREDICT`/`WHERE`
+    - `<measure_unit>`: `YEARS`, `MONTHS`, `WEEKS`, `DAYS`, `HOURS`, `MINUTES`, `SECONDS`
+
+- Time window is half-open: `[<start>, <end>)`
+
+- `ASSUMING` filters past context (per timestamp)
+
+- `WHERE` filters future context (per timestamp)
+
+- Temporal converter returns a table with:
+
+    - `fk` - `<primary_key>` from `<entity_table>`
+    - `timestamp` - timestamps you provide to the converter
+    - `label` - predicted value
 
 #### 💡 Example
 
-Predicting average student grade over 10-day windows:
-
 ```python
 from predql.converter import TConverterPredQL
+from relbench.base import Database
 import pandas as pd
 
 # create timestamps for temporal windows
 timestamps = pd.to_datetime(["2025-01-01", "2025-01-15"])
 
+# load your database with tables
+db = Database(...)
+
 # create temporal converter
 converter = TConverterPredQL(db, timestamps)
 
-# convert and execute temporal PredQL query
-result_table = converter.convert("""
+# predicting average student grade over 10-day windows
+example_query1 = """
     PREDICT AVG(grades.grade, 0, 10, DAYS)
     FOR EACH students.studentId;
-""")
+"""
+result_table1 = converter.convert(example_query1)
 
-df = result_table.df() # get dataframe object
-```
+# predicting average student grade over 10-day windows
+# for students whose average grade in previous 10 days is > 2
+# and whose average grade in the subsequent 10 days is < 3
+example_query2 = """
+    PREDICT AVG(grades.grade, 0, 10, DAYS)
+    FOR EACH students.studentId
+    ASSUMING AVG(grades.grade, -10, 0, DAYS) > 2
+    WHERE AVG(grades.grade, 10, 20, DAYS) < 3;
+"""
+result_table2 = converter.convert(example_query2)
 
-## 🔧 Development
-
-### Regenerating the Parser
-
-```bash
-./regenerate_parser.sh
-```
-
-Requires `antlr4` CLI to be installed.
-
-### Running Linter
-
-```bash
-ruff check .
+# get dataframes
+df1 = result_table1.df()
+df2 = result_table2.df()
 ```
 
 ## 🏗️ Architecture
@@ -172,3 +207,38 @@ PredQL Query String
 [DuckDB] → Result Table
 ```
 
+## 🔧 Development
+
+### Install `uv`
+
+- macOS & Linux
+
+    ```bash
+    wget -qO- https://astral.sh/uv/install.sh | sh
+    ```
+
+- Windows
+
+    ```bash
+    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    ```
+
+### Install dependencies
+
+```bash
+uv sync --all-extras
+```
+
+### Regenerating the Parser
+
+If you change the lexer or parser (`*.g4`), regenerate the ANTLR outputs from the repo root:
+
+```bash
+./regenerate_parser.sh
+```
+
+### Running Linter
+
+```bash
+ruff check .
+```
