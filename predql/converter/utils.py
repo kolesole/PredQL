@@ -65,26 +65,26 @@ def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk
                 end = int(aggr_dict["End"])
                 measure_unit = aggr_dict["MeasureUnit"].upper().removesuffix("S")
 
-                return lambda table : f"""
-                    (
-                    SELECT
-                        ARRAY_AGG(freq_tbl.val ORDER BY freq_tbl.freq DESC)
-                    FROM (
-                        SELECT
-                            in_tbl.{column} AS val,
-                            COUNT(*) AS freq
-                        FROM
-                            {in_table} in_tbl
-                        WHERE
-                            in_tbl.{time_column} >= time.timestamp + INTERVAL '{start} {measure_unit}'
-                        AND
-                            in_tbl.{time_column} <  time.timestamp + INTERVAL '{end} {measure_unit}'
-                        AND
-                            in_tbl.{fk} = parent.{ppk}
-                        GROUP BY in_tbl.{column}
-                        ) freq_tbl
-                    )
-                    """
+                return lambda table : (
+                     "(\n"
+                     "SELECT\n"
+                     "    ARRAY_AGG(freq_tbl.val ORDER BY freq_tbl.freq DESC)\n"
+                     "FROM (\n"
+                     "    SELECT\n"
+                    f"        in_tbl.{column} AS val,\n"
+                    f"        COUNT(*) AS freq\n"
+                     "    FROM\n"
+                    f"        {in_table} in_tbl\n"
+                     "    WHERE\n"
+                    f"        in_tbl.{time_column} >= time.timestamp + INTERVAL '{start} {measure_unit}'\n"
+                     "    AND\n"
+                    f"        in_tbl.{time_column} <  time.timestamp + INTERVAL '{end} {measure_unit}'\n"
+                    f"    AND\n"
+                    f"        in_tbl.{fk} = parent.{ppk}\n"
+                    f"    GROUP BY in_tbl.{column}\n"
+                     "    ) freq_tbl\n"
+                     ")"
+                )
             else:
                 return lambda table : f"ARRAY_AGG(DISTINCT {table}.{column})"
         case "max":
@@ -96,12 +96,7 @@ def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk
         case _:
             raise ValueError(f"Unknown aggregation type: {aggr_type}")
 
+
 def get_div_line(message):
     """Generate a division line with message for SQL formatting."""
     return f"{'--' * 3}{message}{'--' * 3}"
-
-def get_indent(indent):
-    """Generate indentation spaces for SQL formatting."""
-    return " " * indent
-
-

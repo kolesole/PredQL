@@ -1,18 +1,16 @@
 """Base PredQL converter module."""
 
-import textwrap
 from abc import abstractmethod
 
 import duckdb
 from antlr4 import CommonTokenStream, InputStream
-from relbench.base import Database, Table
+from predql.base import Database, Table
 
 from predql.converter.utils import (
     build_null_condition,
     build_num_condition,
     build_str_condition,
-    get_div_line,
-    get_indent,
+    get_div_line
 )
 from predql.parser.gen.LexerPredQL import LexerPredQL
 from predql.parser.gen.ParserPredQL import ParserPredQL
@@ -50,8 +48,7 @@ class ConverterPredQL:
 
     @abstractmethod
     def convert(self,
-                predql_query : str,
-                indent       : int=0) -> Table:
+                predql_query : str) -> Table:
         r"""Abstract conversion method.
 
         Main entry point.
@@ -67,8 +64,7 @@ class ConverterPredQL:
                       predict_dict   : dict,
                       ptable         : str,
                       ppk            : str,
-                      for_each_query : str,
-                      indent         : int=0) -> str:
+                      for_each_query : str) -> str:
         r"""Abstract method to build the SQL query for the predict part of the PredQL query.
 
         Note:
@@ -81,8 +77,7 @@ class ConverterPredQL:
     def build_expr(self,
                     expr_dict : dict,
                     ptable    : str,
-                    ppk       : str,
-                    indent    : int=0) -> str:
+                    ppk       : str) -> str:
         r"""Abstract method to build the SQL query for the expression part of the PredQL query.
 
         Note:
@@ -95,8 +90,7 @@ class ConverterPredQL:
     def build_aggregation(self,
                           aggr_dict : dict,
                           ptable    : str,
-                          ppk       : str,
-                          indent    : int=0) -> str:
+                          ppk       : str) -> str:
         r"""Abstract method to build the SQL query for the aggregation part of the PredQL query.
 
         Note:
@@ -129,15 +123,13 @@ class ConverterPredQL:
     def build_condition(self,
                         cond_dict : dict,
                         ptable    : str,
-                        ppk       : str,
-                        indent    : int=0) -> str:
+                        ppk       : str) -> str:
         r"""Builds the SQL query for a condition part of the PredQL query.
 
         Args:
             cond_dict (dict): Dictionary representation of the condition part of the PredQL query.
             ptable (str): Name of the parent table.
             ppk (str): Name of the primary key column in the parent table.
-            indent (int, optional): Indentation level for formatting the SQL query, default is 0.
 
         Returns:
             res_query (str): SQL query string representing the condition part of the PredQL query.
@@ -147,11 +139,12 @@ class ConverterPredQL:
         cond_type = cond_dict["CondType"]
         match cond_type:
             case "aggregation":
-                main_query = self.build_aggregation(cond_dict["Aggregation"], ptable, ppk, indent)
+                main_query = self.build_aggregation(cond_dict["Aggregation"], ptable, ppk)
             case "id_dot_id":
-                main_query = self.build_id_dot_id(cond_dict, ptable, ppk, indent)
+                main_query = self.build_id_dot_id(cond_dict, ptable, ppk)
             case _:
                 raise ValueError(f"Unknown condition type: {cond_type}")
+        main_query = main_query.replace("\n", "\n" + 4*" ") + "\n"
 
         # column to compare in condition
         # check build_aggregation and build_id_dot_id
@@ -178,17 +171,16 @@ class ConverterPredQL:
         NOT = "NOT " if cond_dict["NOT"] else ""
 
         # build final condition query
-        res_query = f"""
-            {div_line1}
-            SELECT
-                *
-            FROM
-                ({main_query})
-            WHERE
-                {NOT}{cond(comp_col)}
-            {div_line2}
-            """
-        res_query = textwrap.indent(res_query, get_indent(indent))
+        res_query = (
+            f"{div_line1}\n"
+             "SELECT\n"
+             "    *\n"
+             "FROM\n"
+            f"    ({main_query})\n"
+             "WHERE\n"
+            f"    {NOT}{cond(comp_col)}\n"
+            f"{div_line2}"
+        )
 
         return res_query
 
@@ -196,15 +188,13 @@ class ConverterPredQL:
     def build_id_dot_id(self,
                         some_dict : dict,
                         ptable    : str,
-                        ppk       : str,
-                        indent    : int=0) -> str:
+                        ppk       : str) -> str:
         r"""Builds the SQL query for a table.column(id_dot_id) part of the PredQL query.
 
         Args:
             some_dict (dict): Dictionary containing 'Table', 'Column' keys.
             ptable (str): Name of the parent table.
             ppk (str): Name of the primary key column in the parent table.
-            indent (int, optional): Indentation level for formatting the SQL query, default is 0.
 
         Returns:
             res_query (str): SQL query string representing the id_dot_id part of the PredQL query.
@@ -222,16 +212,15 @@ class ConverterPredQL:
         fk = self.find_fk(table, ptable, ppk)
 
         # build final id_dot_id query
-        res_query = f"""
-            {div_line1}
-            SELECT
-                {fk} AS fk,
-                {column} AS {comp_col}
-            FROM
-                {table}
-            {div_line2}
-            """
-        res_query = textwrap.indent(res_query, get_indent(indent))
+        res_query = (
+            f"{div_line1}\n"
+             "SELECT\n"
+            f"    {fk} AS fk,\n"
+            f"    {column} AS {comp_col}\n"
+             "FROM\n"
+            f"    {table}\n"
+            f"{div_line2}"
+        )
 
         return res_query
 

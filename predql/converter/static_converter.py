@@ -1,11 +1,9 @@
 """Static PredQL converter module for non-temporal queries."""
 
-import textwrap
-
-from relbench.base import Table
+from predql.base import Table
 
 from predql.converter.converter import ConverterPredQL
-from predql.converter.utils import get_div_line, get_indent
+from predql.converter.utils import get_div_line
 
 
 class SConverterPredQL(ConverterPredQL):
@@ -17,15 +15,13 @@ class SConverterPredQL(ConverterPredQL):
     """
 
     def convert(self,
-                predql_query : str,
-                indent       : int=0) -> Table:
+                predql_query : str) -> Table:
         r"""Converts the static PredQL query string into an executable SQL query.
 
         Returns the result as a *`Table`* object.
 
         Args:
             predql_query (str): The PredQL query string to be converted and executed.
-            indent (int, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
             out (Table): The *`Table`* object containing the result of the executed SQL query,\
@@ -47,14 +43,14 @@ class SConverterPredQL(ConverterPredQL):
         # if exists -> build for_each_query
         # otherwise -> for_each_query remains None
         if where_dict:
-            for_each_query = self.build_expr(where_dict["Expr"], ptable, ppk, indent)
+            for_each_query = self.build_expr(where_dict["Expr"], ptable, ppk)
 
         # build PREDICT query
         predict_dict = query_dict["Predict"]
-        sql_query = self.build_predict(predict_dict, ptable, ppk, for_each_query, indent+1)
+        sql_query = self.build_predict(predict_dict, ptable, ppk, for_each_query)
 
         # add semicolon to end of SQL query
-        sql_query = f"{sql_query};"
+        sql_query = f"{sql_query}\n;"
 
         print(sql_query)
 
@@ -72,8 +68,7 @@ class SConverterPredQL(ConverterPredQL):
                       query_dict     : dict,
                       ptable         : str,
                       ppk            : str,
-                      for_each_query : str,
-                      indent         : int=0) -> str:
+                      for_each_query : str) -> str:
         r"""Builds a SQL query for the PREDICT clause in static conversion.
 
         Args:
@@ -81,7 +76,6 @@ class SConverterPredQL(ConverterPredQL):
             ptable (str): Name of the parent table.
             ppk (str): Name of the primary key column in the parent table.
             for_each_query (str): SQL subquery from the FOR_EACH WHERE clause, providing base fk column, can be None.
-            indent (int, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
             predict_query (str): SQL subquery returning (fk, label) pairs.
@@ -90,19 +84,20 @@ class SConverterPredQL(ConverterPredQL):
         # expr / id_dot_id
         pred_type = query_dict["PredType"]
         if pred_type == "expr":
-            main_query = self.build_expr(query_dict["Expr"], ptable, ppk, indent+1)
-            label_query = """
-                CASE
-                    WHEN main.fk IS NOT NULL THEN TRUE
-                    ELSE FALSE
-                END
-                """
-
+            main_query = self.build_expr(query_dict["Expr"], ptable, ppk)
+            label_query = (
+                "CASE\n"
+                "    WHEN main.fk IS NOT NULL THEN TRUE\n"
+                "    ELSE FALSE\n"
+                "END"
+            )
         elif pred_type == "id_dot_id":
-            main_query = self.build_id_dot_id(query_dict, ptable, ppk, indent+1)
+            main_query = self.build_id_dot_id(query_dict, ptable, ppk)
             label_query = "main.comp_col"
         else:
             raise ValueError(f"Unknown predict type: {pred_type}")
+        main_query = main_query.replace("\n", "\n" + 4*" ") + "\n"
+        label_query = label_query.replace("\n", "\n" + 4*" ") + "\n"
 
         # create division markers for formatted output
         div_line_pred1 = get_div_line("PREDICT_START")
@@ -110,39 +105,38 @@ class SConverterPredQL(ConverterPredQL):
 
         # build final predict query depending on FOR EACH WHERE existence
         if for_each_query:
-            predict_query = f"""
-                {div_line_pred1}
-                SELECT
-                    for_each.fk AS fk,
-                    {label_query} AS label
-                FROM
-                    ({for_each_query}) for_each
-                LEFT JOIN
-                    ({main_query}) main
-                ON
-                    main.fk = for_each.fk
-                ORDER BY
-                    main.fk ASC
-                {div_line_pred2}
-                """
-
+            for_each_query = for_each_query.replace("\n", "\n" + 4*" ") + "\n"
+            predict_query = (
+                f"{div_line_pred1}\n"
+                 "SELECT\n"
+                 "    for_each.fk AS fk,\n"
+                f"    {label_query} AS label\n"
+                 "FROM\n"
+                f"    ({for_each_query}) for_each\n"
+                 "LEFT JOIN\n"
+                f"    ({main_query}) main\n"
+                 "ON\n"
+                 "    main.fk = for_each.fk\n"
+                 "ORDER BY\n"
+                 "    main.fk ASC\n"
+                f"{div_line_pred2}"
+            )
         else:
-            predict_query = f"""
-                {div_line_pred1}
-                SELECT
-                    parent.{ppk} AS fk,
-                    {label_query} AS label
-                FROM
-                    {ptable} parent
-                LEFT JOIN
-                    ({main_query}) main
-                ON
-                    main.fk = parent.{ppk}
-                ORDER BY
-                    parent.{ppk} ASC
-                {div_line_pred2}
-                """
-        predict_query = textwrap.indent(predict_query, get_indent(indent))
+            predict_query = (
+                f"{div_line_pred1}\n"
+                 "SELECT\n"
+                f"    parent.{ppk} AS fk,\n"
+                f"    {label_query} AS label\n"
+                 "FROM\n"
+                f"    {ptable} parent\n"
+                 "LEFT JOIN\n"
+                f"    ({main_query}) main\n"
+                 "ON\n"
+                f"    main.fk = parent.{ppk}\n"
+                 "ORDER BY\n"
+                f"    parent.{ppk} ASC\n"
+                f"{div_line_pred2}"
+            )
 
         return predict_query
 
@@ -150,8 +144,7 @@ class SConverterPredQL(ConverterPredQL):
     def build_expr(self,
                    expr_dict : dict,
                    ptable    : str,
-                   ppk       : str,
-                   indent    : int=0) -> str:
+                   ppk       : str) -> str:
         r"""Recursively builds a SQL query for a logical expression tree.
 
         Converts nested boolean expressions (from WHERE or ASSUMING clauses) into SQL.
@@ -163,7 +156,6 @@ class SConverterPredQL(ConverterPredQL):
                 'Left', 'Right' keys or a single condition).
             ptable (str): Name of the parent table.
             ppk (str): Name of the primary key column in the parent table.
-            indent (int, optional): Indentation level for formatted SQL output, default is 0.
 
         Returns:
             expr_query (str): SQL query returning foreign keys where the expression is true.
@@ -176,9 +168,11 @@ class SConverterPredQL(ConverterPredQL):
         # otherwise -> build single condition expression
         if "Op" in expr_dict:
             # build left expession
-            left_expr = self.build_expr(expr_dict["Left"], ptable, ppk, indent+1)
+            left_expr = self.build_expr(expr_dict["Left"], ptable, ppk)
+            left_expr = left_expr.replace("\n", "\n" + 4*" ") + "\n"
             # build right expression
-            right_expr = self.build_expr(expr_dict["Right"], ptable, ppk, indent+1)
+            right_expr = self.build_expr(expr_dict["Right"], ptable, ppk)
+            right_expr = right_expr.replace("\n", "\n" + 4*" ") + "\n"
 
             # check operation and convert to SQL format for tables
             op = expr_dict["Op"].lower()
@@ -189,21 +183,20 @@ class SConverterPredQL(ConverterPredQL):
             else:
                 raise ValueError(f"Unknown expression operator: {op}")
 
-            expr_query = f"""
-                {div_line_expr1}
-                SELECT
-                    fk,
-                FROM
-                    ({left_expr}) left_expr
-                {filt}
-                SELECT
-                    fk,
-                FROM ({right_expr}) right_expr
-                {div_line_expr2}
-                """
+            expr_query = (
+                f"{div_line_expr1}\n"
+                 "SELECT\n"
+                 "    fk,\n"
+                 "FROM\n"
+                f"    ({left_expr}) left_expr\n"
+                f"{filt}\n"
+                 "SELECT\n"
+                 "    fk,\n"
+                f"FROM ({right_expr}) right_expr\n"
+                f"{div_line_expr2}"
+            )
         else:
-            expr_query = self.build_condition(expr_dict, ptable, ppk, indent+1)
-        expr_query = textwrap.indent(expr_query, get_indent(indent))
+            expr_query = self.build_condition(expr_dict, ptable, ppk)
 
         return expr_query
 
