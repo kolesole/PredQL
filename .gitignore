@@ -216,3 +216,5 @@ __marimo__/
 .streamlit/secrets.toml
 
 sem_project/
+presentation/
+sem_project.zip

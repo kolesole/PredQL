@@ -2,8 +2,8 @@ from io import StringIO
 
 import pandas as pd
 import pytest
-from relbench.base import Database, Table
 
+from predql.base import Database, Table
 from predql.converter import SConverterPredQL, TConverterPredQL
 
 

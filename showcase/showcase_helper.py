@@ -1,7 +1,7 @@
 """Helper utilities for PredQL showcase notebooks."""
 
 from antlr4 import CommonTokenStream, InputStream, TerminalNode
-from relbench.base import Database
+from predql.base import Database
 
 from predql.converter import ConverterPredQL, SConverterPredQL, TConverterPredQL
 from predql.parser import LexerPredQL, ParserPredQL
