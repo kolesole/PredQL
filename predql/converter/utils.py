@@ -2,10 +2,10 @@
 
 def build_num_condition(cond_dict : dict):
     """Build SQL numeric comparison condition from parsed dictionary."""
-    tmp = cond_dict["N"]
+    tmp = cond_dict["N"].value
     N = float(tmp) if "." in tmp else int(tmp)
 
-    comp_op = cond_dict["CompOp"]
+    comp_op = cond_dict["CompOp"].value
 
     return lambda column : f"{column} {comp_op} {N}"
 
@@ -13,8 +13,8 @@ def build_num_condition(cond_dict : dict):
 
 def build_str_condition(cond_dict : dict):
     """Build SQL string comparison condition from parsed dictionary."""
-    s = cond_dict["String"].strip("'\"")
-    comp_op = cond_dict["CompOp"].lower()
+    s = cond_dict["String"].value.strip("'\"")
+    comp_op = cond_dict["CompOp"].value.lower()
 
     match comp_op:
         case "contains":
@@ -37,15 +37,15 @@ def build_str_condition(cond_dict : dict):
 
 def build_null_condition(cond_dict : dict):
     """Build SQL NULL check condition from parsed dictionary."""
-    check_op = cond_dict["CheckOp"].upper()
+    check_op = cond_dict["CheckOp"].value.upper()
 
     return lambda column : f"{column} {check_op}"
 
 
 def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk : str=None):
     """Build SQL aggregation function from parsed dictionary."""
-    aggr_type = aggr_dict["AggrType"].lower()
-    column = aggr_dict["Column"]
+    aggr_type = aggr_dict["AggrType"].value.lower()
+    column = aggr_dict["Column"].value
 
     match aggr_type:
         case "avg":
@@ -60,10 +60,10 @@ def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk
             return lambda table : f"ARRAY_AGG({table}.{column} ORDER BY {table}.{time_column} DESC)[1]"
         case "list_distinct":
             if time_column:
-                in_table = aggr_dict["Table"]
-                start = int(aggr_dict["Start"])
-                end = int(aggr_dict["End"])
-                measure_unit = aggr_dict["MeasureUnit"].upper().removesuffix("S")
+                in_table = aggr_dict["Table"].value
+                start = int(aggr_dict["Start"].value)
+                end = int(aggr_dict["End"].value)
+                measure_unit = aggr_dict["MeasureUnit"].value.upper().removesuffix("S")
 
                 return lambda table : (
                      "(\n"

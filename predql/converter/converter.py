@@ -1,11 +1,11 @@
 """Base PredQL converter module."""
 
 from abc import abstractmethod
-
-import duckdb
 from antlr4 import CommonTokenStream, InputStream
-from predql.base import Database, Table
+import duckdb
+import sys
 
+from predql.base import Database, Table
 from predql.converter.utils import (
     build_null_condition,
     build_num_condition,
@@ -14,16 +14,19 @@ from predql.converter.utils import (
 )
 from predql.parser.gen.LexerPredQL import LexerPredQL
 from predql.parser.gen.ParserPredQL import ParserPredQL
-from predql.visitor.visitor_predql import VisitorPredQL
+from predql.validator import ErrorCollector
+from predql.visitor import Visitor
 
 
-class ConverterPredQL:
+class Converter:
     r"""Base PredQL converter class for conversion PredQL -> SQL.
 
     Provides shared functionality for temporal and static PredQL converters.\
     Some methods are astract and must be implemented by concrete subclasses,\
     but others provide common logic used in both static and temporal conversion.
     """
+
+    tmp : bool
 
     def __init__(self,
                  db: Database) -> None:
@@ -39,7 +42,7 @@ class ConverterPredQL:
             out (None):
         """
         self.db = db
-        self.predql_visitor = VisitorPredQL()
+        self.predql_visitor = Visitor()
         self.conn = duckdb.connect()
         # register all tables in DuckDB connection
         for name, table in db.table_dict.items():
@@ -114,9 +117,17 @@ class ConverterPredQL:
         token_stream = CommonTokenStream(lexer)
 
         parser = ParserPredQL(token_stream)
+        parser.removeErrorListeners()
+        collector = ErrorCollector()
+        parser.addErrorListener(collector)
         tree = parser.query()
 
         query_dict = self.predql_visitor.visit(tree)
+
+        if len(collector) > 0:
+            print(collector, file=sys.stderr)
+            sys.exit(1)
+
         return query_dict
 
 
@@ -199,8 +210,8 @@ class ConverterPredQL:
         Returns:
             res_query (str): SQL query string representing the id_dot_id part of the PredQL query.
         """
-        table = some_dict["Table"]
-        column = some_dict["Column"]
+        table = some_dict["Table"].value
+        column = some_dict["Column"].value
 
         # create division markers for formatted output
         div_line1 = get_div_line("ID_DOT_ID_START")

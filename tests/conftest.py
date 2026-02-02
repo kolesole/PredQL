@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from predql.base import Database, Table
-from predql.converter import SConverterPredQL, TConverterPredQL
+from predql.converter import SConverter, TConverter
 
 
 @pytest.fixture(scope="session")
@@ -96,8 +96,8 @@ def temporal_converter(test_db):
     timestamps = pd.to_datetime(["2025-01-01", "2025-01-10"])
     timestamps = pd.Series(timestamps)
 
-    return TConverterPredQL(db=test_db, timestamps=timestamps)
+    return TConverter(db=test_db, timestamps=timestamps)
 
 @pytest.fixture(scope="session")
 def static_converter(test_db):
-    return SConverterPredQL(db=test_db)
+    return SConverter(db=test_db)

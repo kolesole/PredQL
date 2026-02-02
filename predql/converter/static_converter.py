@@ -1,12 +1,12 @@
 """Static PredQL converter module for non-temporal queries."""
 
-from predql.base import Table
+from predql.base import Database, Table
 
-from predql.converter.converter import ConverterPredQL
+from predql.converter.converter import Converter
 from predql.converter.utils import get_div_line
 
 
-class SConverterPredQL(ConverterPredQL):
+class SConverter(Converter):
     r"""Static PredQL converter class for static conversion PredQL -> SQL.
 
     Converts static (non-temporal) PredQL queries into SQL queries.\
@@ -14,6 +14,11 @@ class SConverterPredQL(ConverterPredQL):
     for static prediction tasks.
     """
 
+    def __init__(self,
+                 db: Database) -> None:
+        super().__init__(db)
+        self.tmp = False
+        
     def convert(self,
                 predql_query : str) -> Table:
         r"""Converts the static PredQL query string into an executable SQL query.
@@ -33,9 +38,9 @@ class SConverterPredQL(ConverterPredQL):
         # check FOR EACH
         for_each_dict = query_dict["ForEach"]
         # extract parent table name
-        ptable = for_each_dict["Table"]
+        ptable = for_each_dict["Table"].value
         # extract primary key column name
-        ppk = for_each_dict["Column"]
+        ppk = for_each_dict["Column"].value
 
         # check if FOR_EACH has WHERE clause for filtering
         where_dict = for_each_dict["Where"]
@@ -175,7 +180,7 @@ class SConverterPredQL(ConverterPredQL):
             right_expr = right_expr.replace("\n", "\n" + 4*" ") + "\n"
 
             # check operation and convert to SQL format for tables
-            op = expr_dict["Op"].lower()
+            op = expr_dict["Op"].value.lower()
             if op == "and":
                 filt = "INTERSECT"
             elif op == "or":

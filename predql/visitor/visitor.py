@@ -2,11 +2,33 @@
 
 from predql.parser.gen.ParserPredQL import ParserPredQL
 from predql.parser.gen.ParserPredQLVisitor import ParserPredQLVisitor
+from predql.visitor.parsed_value import ParsedValue
 
 
-class VisitorPredQL(ParserPredQLVisitor):
+class Visitor(ParserPredQLVisitor):
     """Visitor class for converting PredQL parse trees to dictionaries."""
 
+    def _node2value(self, node) -> ParsedValue:
+        if not node:
+            return None
+
+        token = node.getSymbol()
+        return ParsedValue(value=token.text, 
+                           line=token.line, 
+                           column=token.column)
+
+    def _rule2value(self, ctx) -> ParsedValue:
+        value, line, column = None, None, None
+
+        if ctx:
+            value = self.visit(ctx)
+            line = ctx.start.line
+            column = ctx.start.column
+        
+        return ParsedValue(value=value,
+                           line=line,
+                           column=column)
+    
     # Visit a parse tree produced by ParserPredQL#query.
     def visitQuery(self, ctx:ParserPredQL.QueryContext):
         predict = self.visit(ctx.predict())
@@ -36,8 +58,9 @@ class VisitorPredQL(ParserPredQLVisitor):
     # Visit a parse tree produced by ParserPredQL#for_each.
     def visitFor_each(self, ctx:ParserPredQL.For_eachContext):
         qtype = "for_each"
-        table = ctx.ID(0).getText()
-        column = ctx.ID(1).getText()
+
+        table = self._node2value(ctx.ID(0))
+        column = self._node2value(ctx.ID(1))
         where = self.visit(ctx.where()) if ctx.where() else None
 
         for_each_dict = {"QType" : qtype,
@@ -65,12 +88,12 @@ class VisitorPredQL(ParserPredQLVisitor):
             expr = self.visit(ctx.expr_or())
         else:
             pred_type = "id_dot_id"
-            table = ctx.ID(0).getText()
-            column = "*" if ctx.STAR() else ctx.ID(1).getText()
-
-        rank_top = True if ctx.RANK_TOP() else False
-        K = ctx.INT().getText() if rank_top else None
-        classify = True if ctx.CLASSIFY() else False
+            table = self._node2value(ctx.ID(0))
+            column = self._node2value(ctx.STAR() if ctx.STAR() else ctx.ID(1))
+        
+        rank_top = self._node2value(ctx.RANK_TOP())
+        K = self._node2value(ctx.INT())
+        classify = self._node2value(ctx.CLASSIFY())
 
         predict_dict = {"QType"       : qtype,
                         "PredType"    : pred_type,
@@ -104,7 +127,7 @@ class VisitorPredQL(ParserPredQLVisitor):
         expr_dict = self.visit(ctx.expr_and(0))
         for i in range(1, len(ctx.expr_and())):
             right = self.visit(ctx.expr_and(i))
-            expr_dict = {"Op"   : "OR",
+            expr_dict = {"Op"   : self._node2value(ctx.OR(i-1)),
                          "Left" : expr_dict,
                          "Right": right
                      }
@@ -120,7 +143,7 @@ class VisitorPredQL(ParserPredQLVisitor):
         expr_dict = self.visit(ctx.expr_term(0))
         for i in range(1, len(ctx.expr_term())):
             right = self.visit(ctx.expr_term(i))
-            expr_dict = {"Op"   : "AND",
+            expr_dict = {"Op"   : self._node2value(ctx.AND(i-1)),
                          "Left" : expr_dict,
                          "Right": right
                         }
@@ -140,7 +163,7 @@ class VisitorPredQL(ParserPredQLVisitor):
     def visitCondition(self, ctx:ParserPredQL.ConditionContext):
         cond_dict = None
         cond_type = None
-        NOT = True if ctx.NOT() else False
+        NOT = self._node2value(ctx.NOT())
         aggregation = None
         table = None
         column = None
@@ -150,8 +173,9 @@ class VisitorPredQL(ParserPredQLVisitor):
             aggregation = self.visit(ctx.aggregation())
         else:
             cond_type = "id_dot_id"
-            table = ctx.ID(0).getText()
-            column = "*" if ctx.STAR() else ctx.ID(1).getText()
+            table = self._node2value(ctx.ID(0))
+            column = self._node2value(ctx.STAR() if ctx.STAR() else ctx.ID(1))
+
 
         if ctx.num_condition():
             cond_dict = self.visit(ctx.num_condition())
@@ -174,15 +198,15 @@ class VisitorPredQL(ParserPredQLVisitor):
     # Visit a parse tree produced by ParserPredQL#num_condition.
     def visitNum_condition(self, ctx:ParserPredQL.Num_conditionContext):
         ctype = "num"
-        comp_op = ctx.NUM_COMP_OP().getText()
+        comp_op = self._node2value(ctx.NUM_COMP_OP())
 
         N = None
         if ctx.DATETIME():
-            N = ctx.DATETIME().getText()
+            N = self._node2value(ctx.DATETIME())
         elif ctx.FLOAT():
-            N = ctx.FLOAT().getText()
+            N = self._node2value(ctx.FLOAT())
         elif ctx.INT():
-            N = ctx.INT().getText()
+            N = self._node2value(ctx.INT())
 
         num_cond_dict = {"CType"  : ctype,
                          "CompOp" : comp_op,
@@ -194,8 +218,8 @@ class VisitorPredQL(ParserPredQLVisitor):
     # Visit a parse tree produced by ParserPredQL#str_condition.
     def visitStr_condition(self, ctx:ParserPredQL.Str_conditionContext):
         ctype = "str"
-        comp_op = ctx.STR_COMP_OP().getText()
-        string = ctx.STRING().getText()
+        comp_op = self._node2value(ctx.STR_COMP_OP())
+        string = self._node2value(ctx.STRING())
 
         string_cond_dict = {"CType"  : ctype,
                             "CompOp" : comp_op,
@@ -207,7 +231,7 @@ class VisitorPredQL(ParserPredQLVisitor):
     # Visit a parse tree produced by ParserPredQL#null_check_condition.
     def visitNull_check_condition(self, ctx:ParserPredQL.Null_check_conditionContext):
         ctype = "null"
-        check_op = ctx.NULL_CHECK_OP().getText()
+        check_op = self._node2value(ctx.NULL_CHECK_OP())
 
         null_cond_dict = {"CType"   : ctype,
                           "CheckOp" : check_op
@@ -217,13 +241,13 @@ class VisitorPredQL(ParserPredQLVisitor):
 
     # Visit a parse tree produced by ParserPredQL#aggregation.
     def visitAggregation(self, ctx:ParserPredQL.AggregationContext):
-        aggr_type = ctx.AGGR_FUNC().getText()
-        table = ctx.ID(0).getText()
-        column = "*" if ctx.STAR() else ctx.ID(1).getText()
+        aggr_type = self._node2value(ctx.AGGR_FUNC())
+        table = self._node2value(ctx.ID(0))
+        column = self._node2value(ctx.STAR() if ctx.STAR() else ctx.ID(1))
         where = self.visit(ctx.where()) if ctx.where() else None
-        start = ctx.INT(0).getText() if ctx.INT() else None
-        end = ctx.INT(1).getText() if ctx.INT() else None
-        measure_unit = ctx.TIME_MEASURE_UNIT().getText() if ctx.TIME_MEASURE_UNIT() else None
+        start = self._node2value(ctx.INT(0))
+        end = self._node2value(ctx.INT(1))
+        measure_unit = self._node2value(ctx.TIME_MEASURE_UNIT())
 
         aggr_dict = {"AggrType"    : aggr_type,
                      "Table"       : table,

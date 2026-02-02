@@ -3,11 +3,11 @@
 import pandas as pd
 from predql.base import Database, Table
 
-from predql.converter.converter import ConverterPredQL
+from predql.converter.converter import Converter
 from predql.converter.utils import build_aggr_func, get_div_line
 
 
-class TConverterPredQL(ConverterPredQL):
+class TConverter(Converter):
     r"""Temporal PredQL converter class for temporal conversion PredQL -> SQL.
 
     Converts temporal (time-series) PredQL queries into SQL queries.\
@@ -36,6 +36,8 @@ class TConverterPredQL(ConverterPredQL):
         # register timestamp_df in DuckDB for SQL queries
         self.conn.register("timestamp_df", timestamp_df)
 
+        self.tmp = True
+
 
     def convert(self,
                 predql_query : str) -> Table:
@@ -56,9 +58,9 @@ class TConverterPredQL(ConverterPredQL):
         # check FOR EACH
         for_each_dict = query_dict["ForEach"]
         # extract parent table name
-        ptable = for_each_dict["Table"]
+        ptable = for_each_dict["Table"].value
         # extract primary key column name
-        ppk = for_each_dict["Column"]
+        ppk = for_each_dict["Column"].value
 
         # check if FOR_EACH has WHERE clause for filtering
         where_dict = for_each_dict["Where"]
@@ -218,7 +220,7 @@ class TConverterPredQL(ConverterPredQL):
                 label_query = "main.comp_col"
             elif query_dict["RankTop"]:
                 # RANK_TOP K: keep only top K elements from aggregation
-                K = int(query_dict["K"])
+                K = int(query_dict["K"].value)
                 label_query = (
                      "CASE\n"
                     f"    WHEN ARRAY_LENGTH(main.comp_col) > {K} THEN main.comp_col[1:{K}]\n"
@@ -340,7 +342,7 @@ class TConverterPredQL(ConverterPredQL):
             right_expr = right_expr.replace("\n", "\n" + 4*" ") + "\n"
 
             # check operation and convert to SQL format for tables
-            op = expr_dict["Op"].lower()
+            op = expr_dict["Op"].value.lower()
             if op == "and":
                 filt = "INTERSECT"
             elif op == "or":
@@ -387,11 +389,11 @@ class TConverterPredQL(ConverterPredQL):
             aggr_query (str): SQL query returning (fk, col_for_comp, timestamp) where col_for_comp is aggregated.
         """
         # extract aggregation parameters
-        table = aggr_dict["Table"]
-        start = int(aggr_dict["Start"])
-        end = int(aggr_dict["End"])
+        table = aggr_dict["Table"].value
+        start = int(aggr_dict["Start"].value)
+        end = int(aggr_dict["End"].value)
         # remove trailing 'S' from measure unit for SQL syntax
-        measure_unit = aggr_dict["MeasureUnit"].upper().removesuffix("S")
+        measure_unit = aggr_dict["MeasureUnit"].value.upper().removesuffix("S")
 
         # create division markers for formatted output
         div_line_aggr1 = get_div_line("AGGREGATION_START")

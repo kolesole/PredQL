@@ -11,8 +11,8 @@ It lets you write shorter, more expressive queries by abstracting temporal joins
 - 🌳 **Parse Tree Visitor** - Transforms PredQL queries into structured dictionaries
 
 - 🔀 **Dual Converters** - Static and temporal SQL conversion
-  - 📌 `SConverterPredQL` - Non-temporal predictions
-  - ⏰ `TConverterPredQL` - Time-window based temporal predictions with automatic time bucketing
+  - 📌 `SConverter` - Non-temporal predictions
+  - ⏰ `TConverter` - Time-window based temporal predictions with automatic time bucketing
 
 - ⚙️ **Automatic Execution** - Executes generated SQL and returns results as ready-to-use table objects
 
@@ -58,14 +58,14 @@ FOR EACH <entity_table>.<primary_key>
 #### 💡 Examples 
 
 ```python
-from predql.converter import SConverterPredQL
-from relbench.base import Database
+from predql.converter import SConverter
+from predql.base import Database
 
 # load your database with tables
 db = Database(...)
 
 # create converter
-converter = SConverterPredQL(db)
+converter = SConverter(db)
 
 # predicting student favorite subject
 example_query1 = """                   
@@ -152,8 +152,8 @@ FOR EACH <entity_table>.<primary_key>
 #### 💡 Example
 
 ```python
-from predql.converter import TConverterPredQL
-from relbench.base import Database
+from predql.converter import TConverter
+from predql.base import Database
 import pandas as pd
 
 # create timestamps for temporal windows
@@ -163,7 +163,7 @@ timestamps = pd.to_datetime(["2025-01-01", "2025-01-15"])
 db = Database(...)
 
 # create temporal converter
-converter = TConverterPredQL(db, timestamps)
+converter = TConverter(db, timestamps)
 
 # predicting average student grade over 10-day windows
 example_query1 = """
