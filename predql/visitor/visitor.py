@@ -6,23 +6,6 @@ from predql.visitor.parsed_value import ParsedValue
 
 class Visitor(ParserPredQLVisitor):
     """Visitor class for converting PredQL parse trees to dictionaries."""
-
-    def _node2value(self, node) -> ParsedValue:
-        if not node:
-            return None
-
-        token = node.getSymbol()
-        return ParsedValue(value=token.text, 
-                           line=token.line, 
-                           column=token.column)
-
-    def _rule2value(self, ctx) -> ParsedValue:
-        if not ctx:
-            return None
-        
-        return ParsedValue(value=self.visit(ctx),
-                           line=ctx.start.line,
-                           column=ctx.start.column)
     
     # Visit a parse tree produced by ParserPredQL#query.
     def visitQuery(self, ctx:ParserPredQL.QueryContext):
@@ -253,3 +236,24 @@ class Visitor(ParserPredQLVisitor):
                      "MeasureUnit" : measure_unit
                     }
         return aggr_dict
+
+
+    def _node2value(self, node) -> ParsedValue:
+        
+        if not node:
+            return None
+
+        token = node.getSymbol()
+        return ParsedValue(value=token.text, 
+                           line=token.line, 
+                           column=token.column)
+
+
+    def _rule2value(self, ctx) -> ParsedValue:
+
+        if not ctx:
+            return None
+        
+        return ParsedValue(value=self.visit(ctx),
+                           line=ctx.start.line,
+                           column=ctx.start.column)

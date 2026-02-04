@@ -204,4 +204,3 @@ class SConverter(Converter):
             expr_query = self.build_condition(expr_dict.value, ptable, ppk)
 
         return expr_query
-

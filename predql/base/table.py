@@ -7,11 +7,11 @@ class Table:
                  fkey_col_to_pkey_table : dict=None,
                  pkey_col               : str=None,
                  time_col               : str=None) -> None:
-        
         self.df = df
         self.fkey_col_to_pkey_table = fkey_col_to_pkey_table
         self.pkey_col = pkey_col
         self.time_col = time_col
+    
     
     def __repr__(self) -> str:
         return (

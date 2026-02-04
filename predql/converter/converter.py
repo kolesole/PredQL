@@ -41,7 +41,7 @@ class Converter:
             out (None):
         """
         self.db = db
-        self.predql_visitor = Visitor()
+        self.visitor = Visitor()
         self.conn = duckdb.connect()
         # register all tables in DuckDB connection
         for name, table in db.table_dict.items():
@@ -121,7 +121,7 @@ class Converter:
         parser.addErrorListener(collector)
         tree = parser.query()
 
-        query_dict = self.predql_visitor.visit(tree)
+        query_dict = self.visitor.visit(tree)
         validator = Validator(collector, self.db, self.tmp)
         validator.validate_query_dict(query_dict)
         if len(collector) > 0:

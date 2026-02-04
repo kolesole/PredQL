@@ -35,7 +35,6 @@ class TConverter(Converter):
         timestamp_df = pd.DataFrame({"timestamp" : self.timestamps})
         # register timestamp_df in DuckDB for SQL queries
         self.conn.register("timestamp_df", timestamp_df)
-
         self.tmp = True
 
 
