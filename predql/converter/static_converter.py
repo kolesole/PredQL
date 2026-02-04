@@ -36,22 +36,22 @@ class SConverter(Converter):
         query_dict = self.parse_query(predql_query)
 
         # check FOR EACH
-        for_each_dict = query_dict["ForEach"]
+        for_each_dict = query_dict["ForEach"].value
         # extract parent table name
         ptable = for_each_dict["Table"].value
         # extract primary key column name
         ppk = for_each_dict["Column"].value
 
         # check if FOR_EACH has WHERE clause for filtering
-        where_dict = for_each_dict["Where"]
         for_each_query = None
         # if exists -> build for_each_query
         # otherwise -> for_each_query remains None
-        if where_dict:
-            for_each_query = self.build_expr(where_dict["Expr"], ptable, ppk)
+        if where := for_each_dict["Where"]:
+            where_dict = where.value
+            for_each_query = self.build_expr(where_dict["Expr"].value, ptable, ppk)
 
         # build PREDICT query
-        predict_dict = query_dict["Predict"]
+        predict_dict = query_dict["Predict"].value
         sql_query = self.build_predict(predict_dict, ptable, ppk, for_each_query)
 
         # add semicolon to end of SQL query
@@ -89,7 +89,7 @@ class SConverter(Converter):
         # expr / id_dot_id
         pred_type = query_dict["PredType"]
         if pred_type == "expr":
-            main_query = self.build_expr(query_dict["Expr"], ptable, ppk)
+            main_query = self.build_expr(query_dict["Expr"].value, ptable, ppk)
             label_query = (
                 "CASE\n"
                 "    WHEN main.fk IS NOT NULL THEN TRUE\n"
@@ -171,7 +171,7 @@ class SConverter(Converter):
 
         # if expression is composite (AND/OR) -> recursively build left and right sub-expressions
         # otherwise -> build single condition expression
-        if "Op" in expr_dict:
+        if isinstance(expr_dict, dict) and "Op" in expr_dict:
             # build left expession
             left_expr = self.build_expr(expr_dict["Left"], ptable, ppk)
             left_expr = left_expr.replace("\n", "\n" + 4*" ") + "\n"
@@ -201,7 +201,7 @@ class SConverter(Converter):
                 f"{div_line_expr2}"
             )
         else:
-            expr_query = self.build_condition(expr_dict, ptable, ppk)
+            expr_query = self.build_condition(expr_dict.value, ptable, ppk)
 
         return expr_query
 

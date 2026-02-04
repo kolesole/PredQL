@@ -12,9 +12,8 @@ from predql.converter.utils import (
     build_str_condition,
     get_div_line
 )
-from predql.parser.gen.LexerPredQL import LexerPredQL
-from predql.parser.gen.ParserPredQL import ParserPredQL
-from predql.validator import ErrorCollector
+from predql.parser import LexerPredQL, ParserPredQL
+from predql.validator import ErrorCollector, Validator
 from predql.visitor import Visitor
 
 
@@ -123,7 +122,8 @@ class Converter:
         tree = parser.query()
 
         query_dict = self.predql_visitor.visit(tree)
-
+        validator = Validator(collector, self.db, self.tmp)
+        validator.validate_query_dict(query_dict)
         if len(collector) > 0:
             print(collector, file=sys.stderr)
             sys.exit(1)
@@ -150,7 +150,7 @@ class Converter:
         cond_type = cond_dict["CondType"]
         match cond_type:
             case "aggregation":
-                main_query = self.build_aggregation(cond_dict["Aggregation"], ptable, ppk)
+                main_query = self.build_aggregation(cond_dict["Aggregation"].value, ptable, ppk)
             case "id_dot_id":
                 main_query = self.build_id_dot_id(cond_dict, ptable, ppk)
             case _:

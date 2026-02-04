@@ -56,39 +56,39 @@ class TConverter(Converter):
         query_dict = self.parse_query(predql_query)
 
         # check FOR EACH
-        for_each_dict = query_dict["ForEach"]
+        for_each_dict = query_dict["ForEach"].value
         # extract parent table name
         ptable = for_each_dict["Table"].value
         # extract primary key column name
         ppk = for_each_dict["Column"].value
 
         # check if FOR_EACH has WHERE clause for filtering
-        where_dict = for_each_dict["Where"]
         for_each_query = None
         # if exists -> build for_each_query
         # otherwise -> for_each_query remains None
-        if where_dict:
-            for_each_query = self.build_expr(where_dict["Expr"], ptable, ppk)
+        if where := for_each_dict["Where"]:
+            where_dict = where.value
+            for_each_query = self.build_expr(where_dict["Expr"].value, ptable, ppk)
 
         # build PREDICT query
-        predict_dict = query_dict["Predict"]
+        predict_dict = query_dict["Predict"].value
         sql_query = self.build_predict(predict_dict, ptable, ppk, for_each_query)
 
         # check ASSUMING clause to filter predictions
-        assuming_dict = query_dict["Assuming"]
-        if assuming_dict:
+        if assuming := query_dict["Assuming"]:
+            assuming_dict = assuming.value
             sql_query = self.build_assuming(assuming_dict, ptable, ppk, sql_query)
 
         # handle WHERE conditions from PREDICT clause
         # NOTE: will be moved to build_predict in future versions(for nested WHERE in aggregation)
-        predict_aggr_dict = predict_dict["Aggregation"]
-        if predict_aggr_dict:
-            predict_where_dict = predict_aggr_dict["Where"]
+        if predict_aggr := predict_dict["Aggregation"]:
+            predict_aggr_dict = predict_aggr.value
             # if WHERE exists in aggregation -> apply additional filtering
-            if predict_where_dict:
+            if predict_where := predict_aggr_dict["Where"]:
+                predict_where_dict = predict_where.value
                 sql_query = sql_query.replace("\n", "\n" + 4*" ") + "\n"
 
-                help_query = self.build_expr(predict_where_dict["Expr"], ptable, ppk)
+                help_query = self.build_expr(predict_where_dict["Expr"].value, ptable, ppk)
                 help_query = help_query.replace("\n", "\n" + 4*" ") + "\n"
 
                 sql_query = (
@@ -142,7 +142,7 @@ class TConverter(Converter):
             assuming_query (str): The SQL query filtering predictions using ASSUMING with temporal constraints.
         """
         # build assuming expression
-        expr_dict = query_dict["Expr"]
+        expr_dict = query_dict["Expr"].value
         expr_query = self.build_expr(expr_dict, ptable, ppk)
         expr_query = expr_query.replace("\n", "\n" + 4*" ") + "\n"
 
@@ -212,7 +212,7 @@ class TConverter(Converter):
         # aggregation / expr
         pred_type = query_dict["PredType"]
         if pred_type == "aggregation":
-            main_query = self.build_aggregation(query_dict["Aggregation"], ptable, ppk)
+            main_query = self.build_aggregation(query_dict["Aggregation"].value, ptable, ppk)
 
             # determine label extraction logic based on modifiers
             if query_dict["Classify"]:
@@ -231,7 +231,7 @@ class TConverter(Converter):
                 # default: use full aggregated value
                 label_query = "main.comp_col"
         elif pred_type == "expr":
-            main_query = self.build_expr(query_dict["Expr"], ptable, ppk)
+            main_query = self.build_expr(query_dict["Expr"].value, ptable, ppk)
             
             label_query = (
                 "CASE\n"
@@ -333,7 +333,7 @@ class TConverter(Converter):
 
         # if expression is composite (AND/OR) -> recursively build left and right sub-expressions
         # otherwise -> build single condition expression
-        if "Op" in expr_dict:
+        if isinstance(expr_dict, dict) and "Op" in expr_dict:
             # build left expession
             left_expr = self.build_expr(expr_dict["Left"], ptable, ppk)
             left_expr = left_expr.replace("\n", "\n" + 4*" ") + "\n"
@@ -366,7 +366,7 @@ class TConverter(Converter):
                 f"{div_line_expr2}"
             )
         else:
-            expr_query = self.build_condition(expr_dict, ptable, ppk)
+            expr_query = self.build_condition(expr_dict.value, ptable, ppk)
 
         return expr_query
 

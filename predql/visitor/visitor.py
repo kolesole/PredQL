@@ -1,7 +1,6 @@
 """Visitor implementation for traversing PredQL parse trees."""
 
-from predql.parser.gen.ParserPredQL import ParserPredQL
-from predql.parser.gen.ParserPredQLVisitor import ParserPredQLVisitor
+from predql.parser import ParserPredQL, ParserPredQLVisitor
 from predql.visitor.parsed_value import ParsedValue
 
 
@@ -18,23 +17,19 @@ class Visitor(ParserPredQLVisitor):
                            column=token.column)
 
     def _rule2value(self, ctx) -> ParsedValue:
-        value, line, column = None, None, None
-
-        if ctx:
-            value = self.visit(ctx)
-            line = ctx.start.line
-            column = ctx.start.column
+        if not ctx:
+            return None
         
-        return ParsedValue(value=value,
-                           line=line,
-                           column=column)
+        return ParsedValue(value=self.visit(ctx),
+                           line=ctx.start.line,
+                           column=ctx.start.column)
     
     # Visit a parse tree produced by ParserPredQL#query.
     def visitQuery(self, ctx:ParserPredQL.QueryContext):
-        predict = self.visit(ctx.predict())
-        for_each = self.visit(ctx.for_each())
-        assuming = self.visit(ctx.assuming()) if ctx.assuming() else None
-        where = self.visit(ctx.where()) if ctx.where() else None
+        predict = self._rule2value(ctx.predict())
+        for_each = self._rule2value(ctx.for_each())
+        assuming = self._rule2value(ctx.assuming())
+        where = self._rule2value(ctx.where())
 
         query_dict = {"Predict" : predict,
                       "ForEach" : for_each,
@@ -47,7 +42,7 @@ class Visitor(ParserPredQLVisitor):
     # Visit a parse tree produced by ParserPredQL#assuming.
     def visitAssuming(self, ctx:ParserPredQL.AssumingContext):
         qtype = "assuming"
-        expr = self.visit(ctx.expr_or())
+        expr = self._rule2value(ctx.expr_or())
 
         assuming_dict = {"QType" : qtype,
                          "Expr"  : expr
@@ -61,7 +56,7 @@ class Visitor(ParserPredQLVisitor):
 
         table = self._node2value(ctx.ID(0))
         column = self._node2value(ctx.ID(1))
-        where = self.visit(ctx.where()) if ctx.where() else None
+        where = self._rule2value(ctx.where())
 
         for_each_dict = {"QType" : qtype,
                          "Table" : table,
@@ -82,10 +77,10 @@ class Visitor(ParserPredQLVisitor):
 
         if ctx.aggregation():
             pred_type = "aggregation"
-            aggregation = self.visit(ctx.aggregation())
+            aggregation = self._rule2value(ctx.aggregation())
         elif ctx.expr_or():
             pred_type = "expr"
-            expr = self.visit(ctx.expr_or())
+            expr = self._rule2value(ctx.expr_or())
         else:
             pred_type = "id_dot_id"
             table = self._node2value(ctx.ID(0))
@@ -111,7 +106,7 @@ class Visitor(ParserPredQLVisitor):
     # Visit a parse tree produced by ParserPredQL#where.
     def visitWhere(self, ctx:ParserPredQL.WhereContext):
         qtype = "where"
-        expr = self.visit(ctx.expr_or())
+        expr = self._rule2value(ctx.expr_or())
 
         where_dict = {"QType" : qtype,
                       "Expr"  : expr
@@ -154,7 +149,7 @@ class Visitor(ParserPredQLVisitor):
     # Visit a parse tree produced by ParserPredQL#expr_term.
     def visitExpr_term(self, ctx:ParserPredQL.Expr_termContext):
         if ctx.condition():
-            return self.visit(ctx.condition())
+            return self._rule2value(ctx.condition())
         elif ctx.expr_or():
             return self.visit(ctx.expr_or())
 
@@ -170,7 +165,7 @@ class Visitor(ParserPredQLVisitor):
 
         if ctx.aggregation():
             cond_type = "aggregation"
-            aggregation = self.visit(ctx.aggregation())
+            aggregation = self._rule2value(ctx.aggregation())
         else:
             cond_type = "id_dot_id"
             table = self._node2value(ctx.ID(0))
@@ -244,7 +239,7 @@ class Visitor(ParserPredQLVisitor):
         aggr_type = self._node2value(ctx.AGGR_FUNC())
         table = self._node2value(ctx.ID(0))
         column = self._node2value(ctx.STAR() if ctx.STAR() else ctx.ID(1))
-        where = self.visit(ctx.where()) if ctx.where() else None
+        where = self._rule2value(ctx.where())
         start = self._node2value(ctx.INT(0))
         end = self._node2value(ctx.INT(1))
         measure_unit = self._node2value(ctx.TIME_MEASURE_UNIT())

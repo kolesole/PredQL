@@ -1,5 +1,11 @@
 from antlr4.error.ErrorListener import ErrorListener
 
+class Colors:
+    DEFAULT = '\033[0m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 class Error():
     
     def __init__(self, 
@@ -43,10 +49,3 @@ class ErrorCollector(ErrorListener):
     
     def __len__(self) -> int:
         return len(self.errors)
-
-
-class Colors:
-    DEFAULT = '\033[0m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
