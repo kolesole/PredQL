@@ -23,20 +23,3 @@ class Table:
             "-------------------------------------------"
         )
     
-    # def __contains__(self,
-    #                  column_name : str) -> bool:
-    #     return column_name in self.df.columns
-    
-    # def is_pkey_col(self,
-    #                 column_name : str) -> bool:
-    #     return self.pkey_col == column_name
-    
-    # def has_time_col(self) -> bool:
-    #     return self.time_col is not None
-    
-    # def pkey_table2fkey_col(self,
-    #                         ptable_name : str) -> bool:
-    #     for fkey_col, pkey_table in self.fkey_col_to_pkey_table.items():
-    #         if ptable_name == pkey_table:
-    #             return fkey_col
-    #     return None
