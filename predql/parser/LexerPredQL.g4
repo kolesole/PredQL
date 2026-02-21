@@ -160,7 +160,7 @@ CLOSE_PAREN
 STAR
     : '*'
     ;
-SEMI_COLUMN
+SEMICOLON
     : ';'
     ;
 
@@ -250,5 +250,3 @@ fragment WS             : [ \t\r\n] ;
 fragment SINGLE_QUOTE   : '\''      ;
 fragment DOUBLE_QUOTE   : '"'       ;
 fragment BACKSLASH      : '\\'      ;
-
-

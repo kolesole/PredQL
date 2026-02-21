@@ -362,7 +362,7 @@ class LexerPredQL(Lexer):
     OPEN_PAREN = 30
     CLOSE_PAREN = 31
     STAR = 32
-    SEMI_COLUMN = 33
+    SEMICOLON = 33
     AND = 34
     OR = 35
     NOT = 36
@@ -388,8 +388,8 @@ class LexerPredQL(Lexer):
             "LIST_DISTINCT", "MAX", "MIN", "SUM", "NUM_COMP_OP", "STR_COMP_OP", 
             "NOT_LIKE", "NOT_CONTAINS", "ENDS_WITH", "STARTS_WITH", "LIKE", 
             "CONTAINS", "NULL_CHECK_OP", "IS_NOT_NULL", "IS_NULL", "DOT", 
-            "COMMA", "OPEN_PAREN", "CLOSE_PAREN", "STAR", "SEMI_COLUMN", 
-            "AND", "OR", "NOT", "DATETIME", "FLOAT", "INT", "TIME_MEASURE_UNIT", 
+            "COMMA", "OPEN_PAREN", "CLOSE_PAREN", "STAR", "SEMICOLON", "AND", 
+            "OR", "NOT", "DATETIME", "FLOAT", "INT", "TIME_MEASURE_UNIT", 
             "STRING", "ID", "WS_SKIP", "ANY" ]
 
     ruleNames = [ "ASSUMING", "FOR_EACH", "PREDICT", "WHERE", "CLASSIFY", 
@@ -398,7 +398,7 @@ class LexerPredQL(Lexer):
                   "NUM_COMP_OP", "STR_COMP_OP", "NOT_LIKE", "NOT_CONTAINS", 
                   "ENDS_WITH", "STARTS_WITH", "LIKE", "CONTAINS", "NULL_CHECK_OP", 
                   "IS_NOT_NULL", "IS_NULL", "DOT", "COMMA", "OPEN_PAREN", 
-                  "CLOSE_PAREN", "STAR", "SEMI_COLUMN", "AND", "OR", "NOT", 
+                  "CLOSE_PAREN", "STAR", "SEMICOLON", "AND", "OR", "NOT", 
                   "DATETIME", "FLOAT", "INT", "TIME_MEASURE_UNIT", "STRING", 
                   "ID", "WS_SKIP", "ANY", "UPPERCASE", "LOWERCASE", "DIGIT", 
                   "WS", "SINGLE_QUOTE", "DOUBLE_QUOTE", "BACKSLASH" ]
