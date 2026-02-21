@@ -2,6 +2,7 @@
 
 import pandas as pd
 from predql.base import Database, Table
+from predql.validator import TValidator
 
 from predql.converter.converter import Converter
 from predql.converter.utils import build_aggr_func, get_div_line
@@ -35,7 +36,7 @@ class TConverter(Converter):
         timestamp_df = pd.DataFrame({"timestamp" : self.timestamps})
         # register timestamp_df in DuckDB for SQL queries
         self.conn.register("timestamp_df", timestamp_df)
-        self.tmp = True
+        self.validator = TValidator(self.collector, self.db)
 
 
     def convert(self,
@@ -53,22 +54,12 @@ class TConverter(Converter):
         """
         # parse PredQL query into dictionary
         query_dict = self.parse_query(predql_query)
+        query_dict = query_dict["QueryTmp"].value
 
         # check FOR EACH
         for_each_dict = query_dict["ForEach"].value
-        # extract parent table name
-        ptable = for_each_dict["Table"].value
-        # extract primary key column name
-        ppk = for_each_dict["Column"].value
-
-        # check if FOR_EACH has WHERE clause for filtering
-        for_each_query = None
-        # if exists -> build for_each_query
-        # otherwise -> for_each_query remains None
-        if where := for_each_dict["Where"]:
-            where_dict = where.value
-            for_each_query = self.build_expr(where_dict["Expr"].value, ptable, ppk)
-
+        ptable, ppk, for_each_query = self.build_for_each(for_each_dict)
+            
         # build PREDICT query
         predict_dict = query_dict["Predict"].value
         sql_query = self.build_predict(predict_dict, ptable, ppk, for_each_query)
@@ -76,34 +67,11 @@ class TConverter(Converter):
         # check ASSUMING clause to filter predictions
         if assuming := query_dict["Assuming"]:
             assuming_dict = assuming.value
-            sql_query = self.build_assuming(assuming_dict, ptable, ppk, sql_query)
-
-        # handle WHERE conditions from PREDICT clause
-        # NOTE: will be moved to build_predict in future versions(for nested WHERE in aggregation)
-        if predict_aggr := predict_dict["Aggregation"]:
-            predict_aggr_dict = predict_aggr.value
-            # if WHERE exists in aggregation -> apply additional filtering
-            if predict_where := predict_aggr_dict["Where"]:
-                predict_where_dict = predict_where.value
-                sql_query = sql_query.replace("\n", "\n" + 4*" ") + "\n"
-
-                help_query = self.build_expr(predict_where_dict["Expr"].value, ptable, ppk)
-                help_query = help_query.replace("\n", "\n" + 4*" ") + "\n"
-
-                sql_query = (
-                     "SELECT\n"
-                     "    sq.fk,\n"
-                     "    sq.timestamp,\n"
-                     "    sq.label\n"
-                     "FROM\n"
-                    f"    ({sql_query}) sq\n"
-                     "JOIN\n"
-                    f"    ({help_query}) hq\n"
-                     "ON\n"
-                     "    hq.fk = sq.fk\n"
-                     "ORDER BY\n"
-                     "    sq.timestamp ASC, sq.fk ASC" 
-                )
+            sql_query = self.build_assuming_where(assuming_dict, ptable, ppk, sql_query, context="ASSUMING")
+        
+        if where := query_dict["Where"]:
+            where_dict = where.value
+            sql_query = self.build_assuming_where(where_dict, ptable, ppk, sql_query, context="WHERE")
 
         # add semicolon to end of SQL query
         sql_query = f"{sql_query}\n;"
@@ -114,80 +82,46 @@ class TConverter(Converter):
         df = self.conn.sql(sql_query).df
         return Table(
             df=df,
-            fkey_col_to_pkey_table=None,
+            fkey_col_to_pkey_table={"fk" : ptable},
             pkey_col=None,
             time_col="timestamp",  # mark timestamp as the time column
             )
 
+    def build_for_each(self, 
+                       for_each_dict : dict) -> list[str, str, str]:
+        ptable = ptable_name = for_each_dict["Table"].value
+        ppk = for_each_dict["Column"].value
 
-    def build_assuming(self,
-                       query_dict    : dict,
-                       ptable        : str,
-                       ppk           : str,
-                       predict_query : str) -> str:
-        r"""Restricts a temporal prediction query using an ASSUMING expression.
+        if where := for_each_dict["Where"]:
+            ptable = self.build_stat_where(where.value, ptable, ppk)
+            ptable = f"({ptable})"
 
-        Filters prediction results to keep only rows where the ASSUMING condition is true.
-        Works by joining the prediction results with the ASSUMING expression on both fk and timestamp,
-        preserving the label column only for matching rows.
-
-        Args:
-            query_dict (dict): Parsed dictionary of the ASSUMING clause.
-            ptable (str): Name of the parent table.
-            ppk (str): Name of the primary key column in the parent table.
-            predict_query (str): The SQL subquery for the PREDICT part (fk, timestamp, label).
-
-        Returns:
-            assuming_query (str): The SQL query filtering predictions using ASSUMING with temporal constraints.
-        """
-        # build assuming expression
-        expr_dict = query_dict["Expr"].value
-        expr_query = self.build_expr(expr_dict, ptable, ppk)
-        expr_query = expr_query.replace("\n", "\n" + 4*" ") + "\n"
-
-        # create division markers for formatted output
-        div_line_ass1 = get_div_line("ASSUMING_START")
-        div_line_ass2 = get_div_line("ASSUMING_END")
-        div_line_help1 = get_div_line("HELP_PART_START")
-        div_line_help2 = get_div_line("HELP_PART_END")
-
-        # build ASSUMING query with temporal join
-        predict_query = predict_query.replace("\n", "\n" + 4*" ") + "\n"
-        assuming_query = (
-            f"{div_line_ass1}\n"
-             "SELECT\n"
-            f"    help.{ppk} AS fk,\n"
-             "    help.timestamp,\n"
-             "    help.label\n"
-             "FROM\n"
-             "    (\n"
-            f"{div_line_help1}\n"
-             "    SELECT\n"
-            f"        parent.{ppk},\n"
-             "        predict.timestamp,\n"
-             "        predict.label\n"
-             "    FROM\n"
-            f"        {ptable} parent\n"
-             "    JOIN\n"
-            f"        ({predict_query}) predict\n"
-             "    ON\n"
-            f"        predict.fk = parent.{ppk}\n"
-            f"{div_line_help2}\n"
-             "    ) help\n"
-             "JOIN\n"
-            f"    ({expr_query}) expr\n"
-             "ON\n"
-            f"    expr.fk = help.{ppk}\n"
-             "AND\n"
-             "    expr.timestamp = help.timestamp\n"
-             "ORDER BY\n"
-            f"    help.timestamp ASC, help.{ppk} ASC\n"
-            f"{div_line_ass2}"
-        )
-
-        return assuming_query
-
-
+        if time_col := self.find_time_column(ptable_name):
+            for_each_query = (
+                 "SELECT\n"
+                f"    parent.{ppk} AS fk,\n"
+                f"    time.timestamp AS timestamp\n"
+                 "FROM\n"
+                f"    {ptable} parent\n"
+                 "JOIN\n"
+                 "    timestamp_df time\n"
+                 "ON\n"
+                f"    time.timestamp >= parent.{time_col}"
+            )
+        else:
+            for_each_query = (
+                 "SELECT\n"
+                f"    parent.{ppk} AS fk,\n"
+                f"    time.timestamp AS timestamp\n"
+                 "FROM\n"
+                f"    {ptable} parent\n"
+                 "CROSS JOIN\n"
+                 "    timestamp_df time\n"
+            )
+        
+        return ptable_name, ppk, for_each_query
+    
+        
     def build_predict(self,
                       query_dict     : dict,
                       ptable         : str,
@@ -239,7 +173,8 @@ class TConverter(Converter):
                 "END"
             )
         else:
-            raise ValueError(f"Unknown predict type: {pred_type}")
+            pass
+
         main_query = main_query.replace("\n", "\n" + 4*" ") + "\n"
         label_query = label_query.replace("\n", "\n" + 4*" ") + "\n"
 
@@ -250,62 +185,110 @@ class TConverter(Converter):
         div_line_help2 = get_div_line("HELP_PART_END")
 
         # build final predict query depending on FOR EACH WHERE existence
-        if for_each_query:
-            for_each_query = for_each_query.replace("\n", "\n" + 4*" ") + "\n"
-            predict_query = (
-                f"{div_line_pred1}\n"
-                 "SELECT\n"
-                f"    help.{ppk} AS fk,\n"
-                 "    help.timestamp,\n"
-                f"    {label_query} AS label\n"
-                 "FROM\n"
-                 "    (\n"
-                f"{div_line_help1}\n"
-                 "    SELECT\n"
-                f"        parent.{ppk},\n"
-                 "        for_each.timestamp,\n"
-                 "    FROM\n"
-                f"        {ptable} parent\n"
-                 "    JOIN\n"
-                f"        ({for_each_query}) for_each\n"
-                 "    ON\n"
-                f"        for_each.fk = parent.{ppk}\n"
-                f"{div_line_help2}\n"
-                 "    ) help\n"
-                 "LEFT JOIN\n"
-                f"    ({main_query}) main\n"
-                 "ON\n"
-                f"    main.fk = help.{ppk}\n"
-                 "AND\n"
-                 "    main.timestamp = help.timestamp\n"
-                 "ORDER BY\n"
-                f"    help.timestamp ASC, help.{ppk} ASC\n"
-                f"{div_line_pred2}"
-            )
-        else:
-            predict_query = (
-                f"{div_line_pred1}\n"
-                 "SELECT\n"
-                f"    parent.{ppk} AS fk,\n"
-                 "    time.timestamp AS timestamp,\n"
-                f"    {label_query} AS label\n"
-                 "FROM\n"
-                f"    {ptable} parent\n"
-                 "CROSS JOIN\n"
-                 "    timestamp_df time\n"
-                 "LEFT JOIN\n"
-                f"    ({main_query}) main\n"
-                 "ON\n"
-                f"    main.fk = parent.{ppk}\n"
-                 "AND\n"
-                 "    main.timestamp = time.timestamp\n"
-                 "ORDER BY\n"
-                f"    time.timestamp ASC, parent.{ppk} ASC\n"
-                f"{div_line_pred2}"
-            )
+        for_each_query = for_each_query.replace("\n", "\n" + 4*" ") + "\n"
+        predict_query = (
+            f"{div_line_pred1}\n"
+             "SELECT\n"
+            f"    help.{ppk} AS fk,\n"
+             "    help.timestamp,\n"
+            f"    {label_query} AS label\n"
+             "FROM\n"
+             "    (\n"
+            f"{div_line_help1}\n"
+             "    SELECT\n"
+            f"        parent.{ppk},\n"
+             "        for_each.timestamp\n"
+             "    FROM\n"
+            f"        {ptable} parent\n"
+             "    JOIN\n"
+            f"        ({for_each_query}) for_each\n"
+             "    ON\n"
+            f"        for_each.fk = parent.{ppk}\n"
+            f"{div_line_help2}\n"
+             "    ) help\n"
+             "LEFT JOIN\n"
+            f"    ({main_query}) main\n"
+             "ON\n"
+            f"    main.fk = help.{ppk}\n"
+             "AND\n"
+             "    main.timestamp = help.timestamp\n"
+             "ORDER BY\n"
+            f"    help.timestamp ASC, help.{ppk} ASC\n"
+            f"{div_line_pred2}"
+        )
 
         return predict_query
+    
 
+    def build_assuming_where(self,
+                             query_dict    : dict,
+                             ptable        : str,
+                             ppk           : str,
+                             predict_query : str,
+                             context       : str) -> str:
+        r"""Restricts a temporal prediction query using an ASSUMING or WHERE expression.
+
+        Filters prediction results to keep only rows where the ASSUMING or WHERE condition is true.
+        Works by joining the prediction results with the ASSUMING or WHERE expression on both fk and timestamp,
+        preserving the label column only for matching rows.
+
+        Args:
+            query_dict (dict): Parsed dictionary of the ASSUMING or WHERE clause.
+            ptable (str): Name of the parent table.
+            ppk (str): Name of the primary key column in the parent table.
+            predict_query (str): The SQL subquery for the PREDICT part (fk, timestamp, label).
+            context (str): String indicating the context of the filter ("ASSUMING" or "WHERE") for formatted output.
+
+        Returns:
+            assuming_query (str): The SQL query filtering predictions using ASSUMING with temporal constraints.
+        """
+        # build assuming expression
+        expr_dict = query_dict["Expr"].value
+        expr_query = self.build_expr(expr_dict, ptable, ppk)
+        expr_query = expr_query.replace("\n", "\n" + 4*" ") + "\n"
+
+        # create division markers for formatted output
+        div_line_ass1 = get_div_line(f"{context}_START")
+        div_line_ass2 = get_div_line(f"{context}_END")
+        div_line_help1 = get_div_line("HELP_PART_START")
+        div_line_help2 = get_div_line("HELP_PART_END")
+
+        # build ASSUMING or WHERE query with temporal join
+        predict_query = predict_query.replace("\n", "\n" + 4*" ") + "\n"
+        assuming_where_query = (
+            f"{div_line_ass1}\n"
+             "SELECT\n"
+            f"    help.{ppk} AS fk,\n"
+             "    help.timestamp,\n"
+             "    help.label\n"
+             "FROM\n"
+             "    (\n"
+            f"{div_line_help1}\n"
+             "    SELECT\n"
+            f"        parent.{ppk},\n"
+             "        predict.timestamp,\n"
+             "        predict.label\n"
+             "    FROM\n"
+            f"        {ptable} parent\n"
+             "    JOIN\n"
+            f"        ({predict_query}) predict\n"
+             "    ON\n"
+            f"        predict.fk = parent.{ppk}\n"
+            f"{div_line_help2}\n"
+             "    ) help\n"
+             "JOIN\n"
+            f"    ({expr_query}) expr\n"
+             "ON\n"
+            f"    expr.fk = help.{ppk}\n"
+             "AND\n"
+             "    expr.timestamp = help.timestamp\n"
+             "ORDER BY\n"
+            f"    help.timestamp ASC, help.{ppk} ASC\n"
+            f"{div_line_ass2}"
+        )
+
+        return assuming_where_query
+    
 
     def build_expr(self,
                    expr_dict : dict,
@@ -334,10 +317,10 @@ class TConverter(Converter):
         # otherwise -> build single condition expression
         if isinstance(expr_dict, dict) and "Op" in expr_dict:
             # build left expession
-            left_expr = self.build_expr(expr_dict["Left"], ptable, ppk)
+            left_expr = self.build_expr(expr_dict["LeftExpr"], ptable, ppk)
             left_expr = left_expr.replace("\n", "\n" + 4*" ") + "\n"
             # build right expression
-            right_expr = self.build_expr(expr_dict["Right"], ptable, ppk)
+            right_expr = self.build_expr(expr_dict["RightExpr"], ptable, ppk)
             right_expr = right_expr.replace("\n", "\n" + 4*" ") + "\n"
 
             # check operation and convert to SQL format for tables
@@ -347,7 +330,7 @@ class TConverter(Converter):
             elif op == "or":
                 filt = "UNION"
             else:
-                raise ValueError(f"Unknown operation in expression: {op}")
+                pass
 
             expr_query = (
                 f"{div_line_expr1}\n"
@@ -388,7 +371,7 @@ class TConverter(Converter):
             aggr_query (str): SQL query returning (fk, col_for_comp, timestamp) where col_for_comp is aggregated.
         """
         # extract aggregation parameters
-        table = aggr_dict["Table"].value
+        aggr_table = aggr_dict["Table"].value
         start = int(aggr_dict["Start"].value)
         end = int(aggr_dict["End"].value)
         # remove trailing 'S' from measure unit for SQL syntax
@@ -399,12 +382,17 @@ class TConverter(Converter):
         div_line_aggr2 = get_div_line("AGGREGATION_END")
 
         # find foreign key column in the aggregation table that links to parent table
-        fk = self.find_fk(table, ptable, ppk)
+        fk = self.find_fk(aggr_table, ptable, ppk)
         # find time column for temporal filtering
-        time_column = self.find_time_column(table)
+        time_column = self.find_time_column(aggr_table)
         # build SQL aggregation function with proper column references
         aggr_func = build_aggr_func(aggr_dict, fk, time_column, ppk)
         aggr = aggr_func("aggr_tbl").replace("\n", "\n" + 4*" ") + "\n"
+
+        if where := aggr_dict["Where"]: 
+            aggr_ppk = self.db.table_dict[aggr_table].pkey_col
+            aggr_table = self.build_stat_where(where.value, aggr_table, aggr_ppk)
+            aggr_table = f"({aggr_table})"
 
         # build temporal aggregation query
         aggr_query = (
@@ -418,8 +406,8 @@ class TConverter(Converter):
              "CROSS JOIN\n"
              "    timestamp_df time\n"
              "LEFT JOIN\n"
-            f"    {table} aggr_tbl\n"
-             "ON\n"
+            f"    {aggr_table} aggr_tbl\n"
+             "ON\n"   
             f"    aggr_tbl.{fk} = parent.{ppk}\n"
              "AND\n"
             f"    aggr_tbl.{time_column} >= time.timestamp + INTERVAL '{start} {measure_unit}'\n"

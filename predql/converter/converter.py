@@ -1,6 +1,6 @@
 """Base PredQL converter module."""
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from antlr4 import CommonTokenStream, InputStream
 import duckdb
 import sys
@@ -25,7 +25,7 @@ class Converter:
     but others provide common logic used in both static and temporal conversion.
     """
 
-    tmp : bool
+    validator : Validator
 
     def __init__(self,
                  db: Database) -> None:
@@ -46,6 +46,8 @@ class Converter:
         # register all tables in DuckDB connection
         for name, table in db.table_dict.items():
             self.conn.register(name, table.df)
+        
+        self.collector = ErrorCollector()
 
 
     @abstractmethod
@@ -60,6 +62,11 @@ class Converter:
         """
         pass
 
+    @abstractmethod
+    def build_for_each(self,
+                       for_each_dict : dict) -> list[str, str, str]:
+        pass
+    
 
     @abstractmethod
     def build_predict(self,
@@ -77,17 +84,12 @@ class Converter:
 
     @abstractmethod
     def build_expr(self,
-                    expr_dict : dict,
-                    ptable    : str,
-                    ppk       : str) -> str:
-        r"""Abstract method to build the SQL query for the expression part of the PredQL query.
-
-        Note:
-            For explanation of the building process, see concrete subclasses.
-        """
+                   expr_dict : dict,
+                   ptable    : str,
+                   ppk       : str) -> str:
         pass
 
-
+    
     @abstractmethod
     def build_aggregation(self,
                           aggr_dict : dict,
@@ -117,18 +119,85 @@ class Converter:
 
         parser = ParserPredQL(token_stream)
         parser.removeErrorListeners()
-        collector = ErrorCollector()
-        parser.addErrorListener(collector)
+        parser.addErrorListener(self.collector)
         tree = parser.query()
 
         query_dict = self.visitor.visit(tree)
-        validator = Validator(collector, self.db, self.tmp)
-        validator.validate_query_dict(query_dict)
-        if len(collector) > 0:
-            print(collector, file=sys.stderr)
+        
+        if self.validator:
+            self.validator.validate(query_dict)
+
+        if len(self.collector) > 0:
+            print(self.collector, file=sys.stderr)
             sys.exit(1)
 
         return query_dict
+    
+
+    # NOTE: FOR NOW WORKS ONLY WITH ID_DOT_ID OR EXPRS WITH ID_DOT_ID
+    # NOT WITH AGGREGATION
+    def build_stat_where(self,
+                         where_dict : dict,
+                         ptable     : str,
+                         ppk        : str) -> str:
+        expr_query = self.build_stat_expr(where_dict["Expr"].value, ptable, ppk)
+        where_query = (
+             "SELECT\n"
+             "    *\n"
+             "FROM\n"
+            f"    {ptable} unsorted_aggr_tbl\n"
+            f"JOIN\n"
+            f"    ({expr_query}\n) expr\n"
+             "ON\n"
+            f"    unsorted_aggr_tbl.{ppk} = expr.fk\n" 
+        )
+
+        return where_query
+    
+
+    def build_stat_expr(self,
+                        expr_dict : dict,
+                        ptable    : str,
+                        ppk       : str) -> str:
+        # create division markers for formatted output
+        div_line_expr1 = get_div_line("EXPR_START")
+        div_line_expr2 = get_div_line("EXPR_END")
+
+        # if expression is composite (AND/OR) -> recursively build left and right sub-expressions
+        # otherwise -> build single condition expression
+        if isinstance(expr_dict, dict) and "Op" in expr_dict:
+            # build left expession
+            left_expr = self.build_stat_expr(expr_dict["LeftExpr"], ptable, ppk)
+            left_expr = left_expr.replace("\n", "\n" + 4*" ") + "\n"
+            # build right expression
+            right_expr = self.build_stat_expr(expr_dict["RightExpr"], ptable, ppk)
+            right_expr = right_expr.replace("\n", "\n" + 4*" ") + "\n"
+
+            # check operation and convert to SQL format for tables
+            op = expr_dict["Op"].value.lower()
+            if op == "and":
+                filt = "INTERSECT"
+            elif op == "or":
+                filt = "UNION"
+            else:
+                pass
+
+            expr_query = (
+                f"{div_line_expr1}\n"
+                 "SELECT\n"
+                 "    fk,\n"
+                 "FROM\n"
+                f"    ({left_expr}) left_expr\n"
+                f"{filt}\n"
+                 "SELECT\n"
+                 "    fk,\n"
+                f"FROM ({right_expr}) right_expr\n"
+                f"{div_line_expr2}"
+            )
+        else:
+            expr_query = self.build_condition(expr_dict.value, ptable, ppk)
+
+        return expr_query
 
 
     def build_condition(self,

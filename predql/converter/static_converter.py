@@ -1,9 +1,10 @@
 """Static PredQL converter module for non-temporal queries."""
 
 from predql.base import Database, Table
+from predql.validator import SValidator
 
 from predql.converter.converter import Converter
-from predql.converter.utils import get_div_line
+from predql.converter.utils import build_aggr_func, get_div_line
 
 
 class SConverter(Converter):
@@ -17,7 +18,7 @@ class SConverter(Converter):
     def __init__(self,
                  db: Database) -> None:
         super().__init__(db)
-        self.tmp = False
+        self.validator = SValidator(self.collector, self.db)
         
     def convert(self,
                 predql_query : str) -> Table:
@@ -34,26 +35,20 @@ class SConverter(Converter):
         """
         # parse PredQL query into dictionary
         query_dict = self.parse_query(predql_query)
+        query_dict = query_dict["QueryStat"].value
 
         # check FOR EACH
         for_each_dict = query_dict["ForEach"].value
-        # extract parent table name
-        ptable = for_each_dict["Table"].value
-        # extract primary key column name
-        ppk = for_each_dict["Column"].value
-
-        # check if FOR_EACH has WHERE clause for filtering
-        for_each_query = None
-        # if exists -> build for_each_query
-        # otherwise -> for_each_query remains None
-        if where := for_each_dict["Where"]:
-            where_dict = where.value
-            for_each_query = self.build_expr(where_dict["Expr"].value, ptable, ppk)
+        ptable, ppk, for_each_query = self.build_for_each(for_each_dict)
 
         # build PREDICT query
         predict_dict = query_dict["Predict"].value
         sql_query = self.build_predict(predict_dict, ptable, ppk, for_each_query)
 
+        if where := query_dict["Where"]:
+            where_dict = where.value
+            sql_query = self.build_where(where_dict, ptable, ppk, sql_query)
+        
         # add semicolon to end of SQL query
         sql_query = f"{sql_query}\n;"
 
@@ -63,10 +58,29 @@ class SConverter(Converter):
         df = self.conn.sql(sql_query).df
         return Table(
             df=df,
-            fkey_col_to_pkey_table=None,
+            fkey_col_to_pkey_table={"fk" : ptable},
             pkey_col=None,
             time_col=None,
             )
+
+
+    def build_for_each(self,
+                       for_each_dict : dict) -> list[str, str, str]:
+        ptable = for_each_dict["Table"].value
+        ppk = for_each_dict["Column"].value
+
+        if where := for_each_dict["Where"]:
+            for_each_query = self.build_stat_where(where.value, ptable, ppk)
+            ptable = f"({ptable})"
+
+        for_each_query = (
+             "SELECT\n"
+            f"    {ppk} AS fk\n"
+             "FROM\n"
+            f"    {ptable}\n"
+        )
+
+        return ptable, ppk, for_each_query
 
 
     def build_predict(self,
@@ -100,7 +114,8 @@ class SConverter(Converter):
             main_query = self.build_id_dot_id(query_dict, ptable, ppk)
             label_query = "main.comp_col"
         else:
-            raise ValueError(f"Unknown predict type: {pred_type}")
+            pass
+
         main_query = main_query.replace("\n", "\n" + 4*" ") + "\n"
         label_query = label_query.replace("\n", "\n" + 4*" ") + "\n"
 
@@ -109,39 +124,22 @@ class SConverter(Converter):
         div_line_pred2 = get_div_line("PREDICT_END")
 
         # build final predict query depending on FOR EACH WHERE existence
-        if for_each_query:
-            for_each_query = for_each_query.replace("\n", "\n" + 4*" ") + "\n"
-            predict_query = (
-                f"{div_line_pred1}\n"
-                 "SELECT\n"
-                 "    for_each.fk AS fk,\n"
-                f"    {label_query} AS label\n"
-                 "FROM\n"
-                f"    ({for_each_query}) for_each\n"
-                 "LEFT JOIN\n"
-                f"    ({main_query}) main\n"
-                 "ON\n"
-                 "    main.fk = for_each.fk\n"
-                 "ORDER BY\n"
-                 "    main.fk ASC\n"
-                f"{div_line_pred2}"
-            )
-        else:
-            predict_query = (
-                f"{div_line_pred1}\n"
-                 "SELECT\n"
-                f"    parent.{ppk} AS fk,\n"
-                f"    {label_query} AS label\n"
-                 "FROM\n"
-                f"    {ptable} parent\n"
-                 "LEFT JOIN\n"
-                f"    ({main_query}) main\n"
-                 "ON\n"
-                f"    main.fk = parent.{ppk}\n"
-                 "ORDER BY\n"
-                f"    parent.{ppk} ASC\n"
-                f"{div_line_pred2}"
-            )
+        for_each_query = for_each_query.replace("\n", "\n" + 4*" ") + "\n"
+        predict_query = (
+            f"{div_line_pred1}\n"
+             "SELECT\n"
+             "    for_each.fk AS fk,\n"
+            f"    {label_query} AS label\n"
+             "FROM\n"
+            f"    ({for_each_query}) for_each\n"
+             "LEFT JOIN\n"
+            f"    ({main_query}) main\n"
+             "ON\n"
+             "    main.fk = for_each.fk\n"
+             "ORDER BY\n"
+             "    for_each.fk ASC\n"
+            f"{div_line_pred2}"
+        )
 
         return predict_query
 
@@ -165,6 +163,12 @@ class SConverter(Converter):
         Returns:
             expr_query (str): SQL query returning foreign keys where the expression is true.
         """
+        expr_query = self.build_stat_expr(expr_dict, ptable, ppk)
+        return expr_query
+    
+
+
+    
         # create division markers for formatted output
         div_line_expr1 = get_div_line("EXPR_START")
         div_line_expr2 = get_div_line("EXPR_END")
@@ -173,10 +177,10 @@ class SConverter(Converter):
         # otherwise -> build single condition expression
         if isinstance(expr_dict, dict) and "Op" in expr_dict:
             # build left expession
-            left_expr = self.build_expr(expr_dict["Left"], ptable, ppk)
+            left_expr = self.build_expr(expr_dict["LeftExpr"], ptable, ppk)
             left_expr = left_expr.replace("\n", "\n" + 4*" ") + "\n"
             # build right expression
-            right_expr = self.build_expr(expr_dict["Right"], ptable, ppk)
+            right_expr = self.build_expr(expr_dict["RightExpr"], ptable, ppk)
             right_expr = right_expr.replace("\n", "\n" + 4*" ") + "\n"
 
             # check operation and convert to SQL format for tables
@@ -186,7 +190,7 @@ class SConverter(Converter):
             elif op == "or":
                 filt = "UNION"
             else:
-                raise ValueError(f"Unknown expression operator: {op}")
+                pass
 
             expr_query = (
                 f"{div_line_expr1}\n"
@@ -204,3 +208,84 @@ class SConverter(Converter):
             expr_query = self.build_condition(expr_dict.value, ptable, ppk)
 
         return expr_query
+    
+
+    def build_where(self,
+                    where_dict    : dict,
+                    ptable        : str,
+                    ppk           : str,
+                    predict_query : str) -> str:
+        expr_query = self.build_expr(where_dict["Expr"].value, ptable, ppk)
+        where_query = (
+             "SELECT\n"
+             "    *\n"
+             "FROM\n"
+            f"    ({predict_query}\n) predict\n"
+             "JOIN\n"
+            f"    ({expr_query}\n) expr\n"
+             "ON\n"
+             "    predict.fk = expr.fk\n"
+             "ORDER BY\n"
+             "    predict.fk ASC\n"
+        )
+
+        return where_query
+    
+
+    def build_aggregation(self,
+                          aggr_dict : dict,
+                          ptable    : str,
+                          ppk       : str) -> str:
+        r"""Builds the SQL query for a PredQL aggregation over a time window.
+
+        Computes aggregations relative to prediction timestamps within a defined
+        `[start, end)` time window.
+
+        Args:
+            aggr_dict (dict): Parsed aggregation dictionary with Table, Start, End, MeasureUnit.
+            ptable (str): Name of the parent table.
+            ppk (str): Name of the primary key column in the parent table.
+
+        Returns:
+            aggr_query (str): SQL query returning (fk, col_for_comp, timestamp) where col_for_comp is aggregated.
+        """
+        # extract aggregation parameters
+        aggr_table = aggr_dict["Table"].value
+
+        # create division markers for formatted output
+        div_line_aggr1 = get_div_line("AGGREGATION_START")
+        div_line_aggr2 = get_div_line("AGGREGATION_END")
+
+        # find foreign key column in the aggregation table that links to parent table
+        fk = self.find_fk(aggr_table, ptable, ppk)
+        # find time column for temporal filtering
+        # build SQL aggregation function with proper column references
+        aggr_func = build_aggr_func(aggr_dict)
+        aggr = aggr_func("aggr_tbl").replace("\n", "\n" + 4*" ") + "\n"
+
+        if where := aggr_dict["Where"]: 
+            aggr_ppk = self.db.table_dict[aggr_table].pkey_col
+            aggr_table = self.build_stat_where(where.value, aggr_table, aggr_ppk)
+            aggr_table = f"({aggr_table})"
+
+        # build static aggregation query
+        aggr_query = (
+            f"{div_line_aggr1}\n"
+             "SELECT\n"
+            f"    parent.{ppk} AS fk,\n"
+            f"    {aggr} AS comp_col,\n"
+             "FROM\n"
+            f"    {ptable} parent\n"
+             "LEFT JOIN\n"
+            f"    {aggr_table} aggr_tbl\n"
+             "ON\n"   
+            f"    aggr_tbl.{fk} = parent.{ppk}\n"
+             "GROUP BY\n"
+            f"    time.timestamp, parent.{ppk}\n"
+            f"{div_line_aggr2}" 
+        )
+
+        return aggr_query
+
+        
+
