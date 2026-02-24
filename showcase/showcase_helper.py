@@ -52,7 +52,7 @@ class ConverterShowcaseHelper:
     def convert_query(self, query):
         print("========================================")
         print(query)
-        table = self.predql_converter.convert(query)
+        table = self.predql_converter.convert(query, show=True)
         print(table)
         print("========================================")
 

@@ -1,6 +1,7 @@
-"""Temporal PredQL converter module for time-series queries."""
+"""Temporal PredQL converter class for time-series queries."""
 
 import pandas as pd
+
 from predql.base import Database, Table
 from predql.validator import TValidator
 
@@ -11,8 +12,8 @@ from predql.converter.utils import build_aggr_func, get_div_line
 class TConverter(Converter):
     r"""Temporal PredQL converter class for temporal conversion PredQL -> SQL.
 
-    Converts temporal (time-series) PredQL queries into SQL queries.\
-    Extends the base ConverterPredQL class with concrete implementations\
+    Converts temporal (time-series) PredQL queries into SQL queries.  
+    Extends the base Converter class with concrete implementations  
     for temporal prediction tasks with time window support.
     """
 
@@ -29,34 +30,36 @@ class TConverter(Converter):
             out (None):
         """
         super().__init__(db)
-
         # store timestamps for temporal prediction
         self.timestamps = timestamps
         # create DataFrame with timestamp column for temporal operations
         timestamp_df = pd.DataFrame({"timestamp" : self.timestamps})
         # register timestamp_df in DuckDB for SQL queries
         self.conn.register("timestamp_df", timestamp_df)
+        # initialize temporal validator
         self.validator = TValidator(self.collector, self.db)
 
 
     def convert(self,
-                predql_query : str) -> Table:
+                predql_query : str,
+                show         : bool=False) -> Table:
         r"""Converts the temporal PredQL query string into an executable SQL query.
 
         Returns the result as a *`Table`* object.
 
         Args:
             predql_query (str): The PredQL query string to be converted and executed.
+            show (bool): If True, prints the generated SQL query.
 
         Returns:
-            out (Table): The *`Table`* object containing the result of the executed SQL query,\
+            out (Table): The *`Table`* object containing the result of the executed SQL query,  
                     with columns (*fk*, *timestamp*, *label*) corresponding to the translated PredQL query output.
         """
         # parse PredQL query into dictionary
         query_dict = self.parse_query(predql_query)
         query_dict = query_dict["QueryTmp"].value
 
-        # check FOR EACH
+        # build FOR EACH query
         for_each_dict = query_dict["ForEach"].value
         ptable, ppk, for_each_query = self.build_for_each(for_each_dict)
             
@@ -64,11 +67,12 @@ class TConverter(Converter):
         predict_dict = query_dict["Predict"].value
         sql_query = self.build_predict(predict_dict, ptable, ppk, for_each_query)
 
-        # check ASSUMING clause to filter predictions
+        # build ASSUMING query if exists, using PREDICT query as base
         if assuming := query_dict["Assuming"]:
             assuming_dict = assuming.value
             sql_query = self.build_assuming_where(assuming_dict, ptable, ppk, sql_query, context="ASSUMING")
         
+        # build WHERE query if exists, using PREDICT query as base
         if where := query_dict["Where"]:
             where_dict = where.value
             sql_query = self.build_assuming_where(where_dict, ptable, ppk, sql_query, context="WHERE")
@@ -76,26 +80,47 @@ class TConverter(Converter):
         # add semicolon to end of SQL query
         sql_query = f"{sql_query}\n;"
 
-        print(sql_query)
+        if show:
+            print(sql_query)
 
         # execute SQL query and return result as Table
-        df = self.conn.sql(sql_query).df
+        df = self.conn.sql(sql_query).df()
         return Table(
             df=df,
-            fkey_col_to_pkey_table={"fk" : ptable},
+            fkey_col_to_pkey_table={"fk" : ptable}, # fk column in output table corresponds to pk of parent table
             pkey_col=None,
-            time_col="timestamp",  # mark timestamp as the time column
+            time_col="timestamp", # mark timestamp as the time column
             )
 
+
     def build_for_each(self, 
-                       for_each_dict : dict) -> list[str, str, str]:
+                       for_each_dict : dict) -> tuple[str, str, str]:
+        r"""Builds a SQL query for the FOR EACH clause in temporal conversion.
+
+        CROSS JOINS the parent table with timestamps.
+        If the parent table has a time column, keeps only rows for which cur_timestamp >= time_col.
+        
+        Args:
+            for_each_dict (dict): Parsed dictionary of the FOR EACH clause.
+        
+        Returns:
+            ptable (str): Name of the parent table.   
+            ppk (str): Name of the primary key column in the parent table.  
+            for_each_query (str): SQL subquery returning (*fk*, *timestamp*) pairs of 
+                    the parent table (optionally filtered).  
+        """
+        # extract parent table and primary key column
         ptable = ptable_name = for_each_dict["Table"].value
         ppk = for_each_dict["Column"].value
 
+        # build static WHERE query if exists to filter parent table rows before prediction
         if where := for_each_dict["Where"]:
             ptable = self.build_stat_where(where.value, ptable, ppk)
             ptable = f"({ptable})"
 
+        # filter parent table rows based on time column 
+        # if exists -> time_col must be < timestamp 
+        # otherwise -> cross join with timestamps
         if time_col := self.find_time_column(ptable_name):
             for_each_query = (
                  "SELECT\n"
@@ -106,7 +131,7 @@ class TConverter(Converter):
                  "JOIN\n"
                  "    timestamp_df time\n"
                  "ON\n"
-                f"    time.timestamp >= parent.{time_col}"
+                f"    time.timestamp >= parent.{time_col}\n"
             )
         else:
             for_each_query = (
@@ -123,7 +148,7 @@ class TConverter(Converter):
     
         
     def build_predict(self,
-                      query_dict     : dict,
+                      predict_dict   : dict,
                       ptable         : str,
                       ppk            : str,
                       for_each_query : str) -> str:
@@ -143,17 +168,17 @@ class TConverter(Converter):
         """
         # check predict type, build main_query and label_query accordingly
         # aggregation / expr
-        pred_type = query_dict["PredType"]
+        pred_type = predict_dict["PredType"]
         if pred_type == "aggregation":
-            main_query = self.build_aggregation(query_dict["Aggregation"].value, ptable, ppk)
-
+            main_query = self.build_aggregation(predict_dict["Aggregation"].value, ptable, ppk)
+            
             # determine label extraction logic based on modifiers
-            if query_dict["Classify"]:
+            if predict_dict["Classify"]:
                 # CLASSIFY: use aggregated value directly
                 label_query = "main.comp_col"
-            elif query_dict["RankTop"]:
+            elif predict_dict["RankTop"]:
                 # RANK_TOP K: keep only top K elements from aggregation
-                K = int(query_dict["K"].value)
+                K = int(predict_dict["K"].value)
                 label_query = (
                      "CASE\n"
                     f"    WHEN ARRAY_LENGTH(main.comp_col) > {K} THEN main.comp_col[1:{K}]\n"
@@ -164,7 +189,7 @@ class TConverter(Converter):
                 # default: use full aggregated value
                 label_query = "main.comp_col"
         elif pred_type == "expr":
-            main_query = self.build_expr(query_dict["Expr"].value, ptable, ppk)
+            main_query = self.build_expr(predict_dict["Expr"].value, ptable, ppk)
             
             label_query = (
                 "CASE\n"
@@ -184,7 +209,7 @@ class TConverter(Converter):
         div_line_help1 = get_div_line("HELP_PART_START")
         div_line_help2 = get_div_line("HELP_PART_END")
 
-        # build final predict query depending on FOR EACH WHERE existence
+        # build final predict query
         for_each_query = for_each_query.replace("\n", "\n" + 4*" ") + "\n"
         predict_query = (
             f"{div_line_pred1}\n"
@@ -221,7 +246,7 @@ class TConverter(Converter):
     
 
     def build_assuming_where(self,
-                             query_dict    : dict,
+                             some_dict     : dict,
                              ptable        : str,
                              ppk           : str,
                              predict_query : str,
@@ -233,17 +258,17 @@ class TConverter(Converter):
         preserving the label column only for matching rows.
 
         Args:
-            query_dict (dict): Parsed dictionary of the ASSUMING or WHERE clause.
+            some_dict (dict): Parsed dictionary of the ASSUMING or WHERE clause.
             ptable (str): Name of the parent table.
             ppk (str): Name of the primary key column in the parent table.
-            predict_query (str): The SQL subquery for the PREDICT part (fk, timestamp, label).
-            context (str): String indicating the context of the filter ("ASSUMING" or "WHERE") for formatted output.
+            predict_query (str): The SQL subquery for the PREDICT part (*fk*, *timestamp*, *label*).
+            context (str): String indicating the context of the filter ("ASSUMING" or "WHERE").
 
         Returns:
             assuming_query (str): The SQL query filtering predictions using ASSUMING with temporal constraints.
         """
         # build assuming expression
-        expr_dict = query_dict["Expr"].value
+        expr_dict = some_dict["Expr"].value
         expr_query = self.build_expr(expr_dict, ptable, ppk)
         expr_query = expr_query.replace("\n", "\n" + 4*" ") + "\n"
 
@@ -296,7 +321,7 @@ class TConverter(Converter):
                    ppk       : str) -> str:
         r"""Recursively builds a SQL query for a logical expression tree.
 
-        Converts nested boolean expressions (from WHERE or ASSUMING clauses) into SQL.
+        Converts nested boolean expressions (from PREDICT, WHERE or ASSUMING clauses) into SQL.
         Combines sub-expressions using UNION (for OR) or INTERSECT (for AND) operations
         to return a set of (foreign key, timestamp) pairs where the expression evaluates to true.
 
@@ -307,7 +332,7 @@ class TConverter(Converter):
             ppk (str): Name of the primary key column in the parent table.
 
         Returns:
-            expr_query (str): SQL query returning (foreign key, timestamps pairs) where the expression is true.
+            expr_query (str): SQL query returning (*fk*, *timestamp*) pairs where the expression is true.
         """
         # create division markers for formatted output
         div_line_expr1 = get_div_line("EXPR_START")
@@ -389,6 +414,7 @@ class TConverter(Converter):
         aggr_func = build_aggr_func(aggr_dict, fk, time_column, ppk)
         aggr = aggr_func("aggr_tbl").replace("\n", "\n" + 4*" ") + "\n"
 
+        # build static WHERE query if exists to filter aggregation table rows before temporal aggregation
         if where := aggr_dict["Where"]: 
             aggr_ppk = self.db.table_dict[aggr_table].pkey_col
             aggr_table = self.build_stat_where(where.value, aggr_table, aggr_ppk)

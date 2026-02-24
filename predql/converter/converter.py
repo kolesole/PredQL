@@ -1,4 +1,4 @@
-"""Base PredQL converter module."""
+"""Base PredQL converter class."""
 
 from abc import ABC, abstractmethod
 from antlr4 import CommonTokenStream, InputStream
@@ -6,33 +6,37 @@ import duckdb
 import sys
 
 from predql.base import Database, Table
+from predql.parser import LexerPredQL, ParserPredQL
+from predql.validator import ErrorCollector, Validator
+from predql.visitor import Visitor
+
 from predql.converter.utils import (
     build_null_condition,
     build_num_condition,
     build_str_condition,
     get_div_line
 )
-from predql.parser import LexerPredQL, ParserPredQL
-from predql.validator import ErrorCollector, Validator
-from predql.visitor import Visitor
 
 
-class Converter:
-    r"""Base PredQL converter class for conversion PredQL -> SQL.
+class Converter(ABC):
+    r"""Base abstract PredQL converter class for conversion PredQL -> SQL.
 
-    Provides shared functionality for temporal and static PredQL converters.\
-    Some methods are astract and must be implemented by concrete subclasses,\
+    Provides shared functionality for temporal and static PredQL converters.  
+    Some methods are abstract and must be implemented by concrete subclasses,  
     but others provide common logic used in both static and temporal conversion.
     """
 
+    # validator instance for semantic validation of parsed queries 
+    # set in concrete subclasses
     validator : Validator
 
     def __init__(self,
                  db: Database) -> None:
         r"""Base constructor.
 
-        Initializes *`Database`* instance, *`DuckDB`* connection, *`VisitorPredQL`* instance and\
-        registers all database tables in *`DuckDB`* connection.
+        Initializes *`Database`* instance, *`DuckDB`* connection, *`Visitor`* instance,  
+        registers all database tables in *`DuckDB`* connection and initializes *`ErrorCollector`*  
+        for storing validation errors.
 
         Args:
             db (Database): *`Database`* instance containing the schema and data tables to be queried.
@@ -46,13 +50,13 @@ class Converter:
         # register all tables in DuckDB connection
         for name, table in db.table_dict.items():
             self.conn.register(name, table.df)
-        
         self.collector = ErrorCollector()
 
 
     @abstractmethod
     def convert(self,
-                predql_query : str) -> Table:
+                predql_query : str,
+                show         : bool=False) -> Table:
         r"""Abstract conversion method.
 
         Main entry point.
@@ -62,9 +66,15 @@ class Converter:
         """
         pass
 
+
     @abstractmethod
     def build_for_each(self,
-                       for_each_dict : dict) -> list[str, str, str]:
+                       for_each_dict : dict) -> tuple[str, str, str]:
+        r""""Abstrac method to build the SQL query for the for each part of the PredQL query.
+        
+        Note:
+            For explanation of the building process, see concrete subclasses.
+        """
         pass
     
 
@@ -87,6 +97,11 @@ class Converter:
                    expr_dict : dict,
                    ptable    : str,
                    ppk       : str) -> str:
+        r"""Abstract method to build the SQL query for the expression part of the PredQL query.
+
+        Note:
+            For explanation of the building process, see concrete subclasses.
+        """
         pass
 
     
@@ -105,7 +120,9 @@ class Converter:
 
     def parse_query(self,
                     predql_query : str) -> dict:
-        r"""Parses the PredQL query string into a dictionary representation.
+        r"""Parses the PredQL query string into a dictionary representation,  
+        validates a dictionary representation, prints all errors on stderr  
+        and exit the program if any errors were found.
 
         Args:
             predql_query (str): The PredQL query string to be parsed.
@@ -129,11 +146,12 @@ class Converter:
 
         if len(self.collector) > 0:
             print(self.collector, file=sys.stderr)
+            self.collector.clear()
             sys.exit(1)
 
         return query_dict
     
-
+    ####################################################################################
     # NOTE: FOR NOW WORKS ONLY WITH ID_DOT_ID OR EXPRS WITH ID_DOT_ID
     # NOT WITH AGGREGATION
     def build_stat_where(self,
@@ -198,7 +216,8 @@ class Converter:
             expr_query = self.build_condition(expr_dict.value, ptable, ppk)
 
         return expr_query
-
+    
+    #######################################################################################
 
     def build_condition(self,
                         cond_dict : dict,
@@ -223,7 +242,7 @@ class Converter:
             case "id_dot_id":
                 main_query = self.build_id_dot_id(cond_dict, ptable, ppk)
             case _:
-                raise ValueError(f"Unknown condition type: {cond_type}")
+                pass
         main_query = main_query.replace("\n", "\n" + 4*" ") + "\n"
 
         # column to compare in condition
@@ -241,7 +260,7 @@ class Converter:
             case "null":
                 cond = build_null_condition(cond_dict)
             case _:
-                raise ValueError(f"Unknown condition ctype: {ctype}")
+                pass
 
         # create division markers for formatted output
         div_line1 = get_div_line("CONDITION_START")

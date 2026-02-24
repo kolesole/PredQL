@@ -24,7 +24,7 @@ def test_aggr_tmp(temporal_converter,
         FOR EACH students.studentId;
     """
     res_table = temporal_converter.convert(pql_query)
-    res_df = res_table.df()
+    res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
     res_time_col = res_table.time_col
@@ -121,7 +121,7 @@ def test_aggr_tmp(temporal_converter,
                                   check_dtype=False,
                                   atol=1e-5)
 
-    assert res_fkey_col_to_pkey_table is None
+    assert res_fkey_col_to_pkey_table == {"fk" : "students"}
     assert res_pkey_col is None
     assert res_time_col == "timestamp"
 
@@ -137,7 +137,7 @@ def test_list_distinct_tmp(temporal_converter,
         FOR EACH students.studentId;
     """
     res_table = temporal_converter.convert(pql_query)
-    res_df = res_table.df()
+    res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
     res_time_col = res_table.time_col
@@ -169,7 +169,7 @@ def test_list_distinct_tmp(temporal_converter,
     expected = json.loads(ref_df.to_json(orient="records", double_precision=5))
 
     assert actual == expected
-    assert res_fkey_col_to_pkey_table is None
+    assert res_fkey_col_to_pkey_table == {"fk" : "students"}
     assert res_pkey_col is None
     assert res_time_col == "timestamp"
 

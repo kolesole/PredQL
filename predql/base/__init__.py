@@ -1,4 +1,4 @@
-"""Simple database representation module."""
+"""Database representation module for PredQL."""
 
 from predql.base.database import Database
 from predql.base.table import Table

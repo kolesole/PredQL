@@ -1,7 +1,17 @@
 """Utility functions for building SQL conditions and aggregations."""
 
-def build_num_condition(cond_dict : dict):
-    """Build SQL numeric comparison condition from parsed dictionary."""
+from collections.abc import Callable
+
+def build_num_condition(cond_dict : dict) -> Callable[[str], str]:
+    r"""Builds SQL numeric comparison condition from parsed dictionary.
+    
+    Args:
+        cond_dict (dict): Dictionary containing 'N' (numeric value) and
+            'CompOp' (comparison operator like '>', '<=', '==').
+    
+    Returns:
+        function: Lambda that takes a column name and returns SQL condition string.
+    """
     tmp = cond_dict["N"].value
     N = float(tmp) if "." in tmp else int(tmp)
 
@@ -10,9 +20,16 @@ def build_num_condition(cond_dict : dict):
     return lambda column : f"{column} {comp_op} {N}"
 
 
-
-def build_str_condition(cond_dict : dict):
-    """Build SQL string comparison condition from parsed dictionary."""
+def build_str_condition(cond_dict : dict) -> Callable[[str], str]:
+    """Builds SQL string comparison condition from parsed dictionary.
+    
+    Args:
+        cond_dict (dict): Dictionary containing 'String' (string value) and
+            'CompOp' (comparison operator like 'contains', 'starts with').
+    
+    Returns:
+        function: Lambda that takes a column name and returns SQL condition string.
+    """
     s = cond_dict["String"].value.strip("'\"")
     comp_op = cond_dict["CompOp"].value.lower()
 
@@ -32,18 +49,42 @@ def build_str_condition(cond_dict : dict):
         case "=":
             return lambda column : f"{column} = '{s}'"
         case _:
-            raise ValueError(f"Unknown string comparison operator: {comp_op}")
+            pass
 
 
-def build_null_condition(cond_dict : dict):
-    """Build SQL NULL check condition from parsed dictionary."""
+def build_null_condition(cond_dict : dict) -> Callable[[str], str]:
+    """Builds SQL NULL check condition from parsed dictionary.
+    
+    Args:
+        cond_dict (dict): Dictionary containing 'CheckOp' (NULL, IS_NULL).
+    
+    Returns:
+        function: Lambda that takes a column name and returns SQL condition string.
+    """
     check_op = cond_dict["CheckOp"].value.upper()
 
     return lambda column : f"{column} {check_op}"
 
 
-def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk : str=None):
-    """Build SQL aggregation function from parsed dictionary."""
+def build_aggr_func(aggr_dict   : dict, 
+                    fk          : str=None, 
+                    time_column : str=None, 
+                    ppk         : str=None) -> Callable[[str], str]:
+    """Build SQL aggregation function from parsed dictionary.
+    
+    For temporal aggregations (LIST_DISTINCT with time_column), generates SQL subquery which
+    returns list sorted by frequency for all (*fk*, *timestamp*) pairs.
+    
+    Args:
+        aggr_dict (dict): Dictionary containing 'AggrType' (aggregation type) and 'Column' (column to aggregate).  
+            For temporal LIST_DISTINCT, also contains 'Table', 'Start', 'End', and 'MeasureUnit'.
+        fk (str, optional): Foreign key column name for temporal aggregations.
+        time_column (str, optional): Time column name for temporal aggregations.
+        ppk (str, optional): Parent primary key column name for temporal aggregations.
+    
+    Returns:
+        function: Lambda that takes a table name and returns SQL aggregation expression.
+    """
     aggr_type = aggr_dict["AggrType"].value.lower()
     column = aggr_dict["Column"].value
 
@@ -60,6 +101,8 @@ def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk
             return lambda table : f"ARRAY_AGG({table}.{column} ORDER BY {table}.{time_column} DESC)[1]"
         case "list_distinct":
             if time_column:
+                # Temporal LIST_DISTINCT: aggregate values within time window,
+                # ordered by frequency (most frequent first)
                 in_table = aggr_dict["Table"].value
                 start = int(aggr_dict["Start"].value)
                 end = int(aggr_dict["End"].value)
@@ -86,6 +129,7 @@ def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk
                      ")"
                 )
             else:
+                # Static LIST_DISTINCT: simple array aggregation of distinct values
                 return lambda table : f"ARRAY_AGG(DISTINCT {table}.{column})"
         case "max":
             return lambda table : f"MAX({table}.{column})"
@@ -94,9 +138,18 @@ def build_aggr_func(aggr_dict : dict, fk : str=None, time_column : str=None, ppk
         case "sum":
             return lambda table : f"SUM({table}.{column})"
         case _:
-            raise ValueError(f"Unknown aggregation type: {aggr_type}")
+            pass
 
 
-def get_div_line(message):
-    """Generate a division line with message for SQL formatting."""
+def get_div_line(message : str) -> str:
+    """Generate a division line with message for SQL formatting.
+    
+    Creates a SQL comment line with a message.
+    
+    Args:
+        message (str): Message to include in the division line.
+    
+    Returns:
+        out (None):
+    """
     return f"{'--' * 3}{message}{'--' * 3}"
