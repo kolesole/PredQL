@@ -20,7 +20,7 @@ def test_num_cond_tmp(static_converter,
         PREDICT studyInf.studyYear {pql_cond} 3
         FOR EACH students.studentId;
     """
-    res_table = static_converter.convert(pql_query)
+    res_table = static_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
@@ -98,7 +98,7 @@ def test_str_cond_tmp(static_converter,
         PREDICT studyInf.mainInterest {pql_cond} "S"
         FOR EACH students.studentId;
     """
-    res_table = static_converter.convert(pql_query)
+    res_table = static_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
@@ -178,7 +178,7 @@ def test_null_cond_tmp(static_converter,
         PREDICT studyInf.studyYear {pql_cond}
         FOR EACH students.studentId;
     """
-    res_table = static_converter.convert(pql_query)
+    res_table = static_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col

@@ -4,4 +4,4 @@ from predql.converter.converter import Converter
 from predql.converter.static_converter import SConverter
 from predql.converter.temporal_converter import TConverter
 
-__all__ = ['Converter', 'SConverter', 'TConverter']
+__all__ = ["Converter", "SConverter", "TConverter"]

@@ -29,7 +29,7 @@ query_stat
 
 // FOR_EACH clause: specifies the table and attribute to iterate over
 for_each
-    : FOR_EACH ID DOT ID (where_stat)?
+    : FOR_EACH ID DOT (ID | STAR) (where_stat)?
     ;
 
 // PREDICT clause: specifies what to predict (aggregation, expression, or column)

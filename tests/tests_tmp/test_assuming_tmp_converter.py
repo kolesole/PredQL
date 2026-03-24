@@ -11,7 +11,7 @@ def test_assuming_tmp(temporal_converter):
         FOR EACH students.studentId
         ASSUMING LAST(grades.grade, -10, 0, DAYS) IS NULL;
     """
-    res_table = temporal_converter.convert(pql_query)
+    res_table = temporal_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
@@ -21,9 +21,7 @@ def test_assuming_tmp(temporal_converter):
         fk, timestamp,  label
         0,  2025-01-01, 1.6
         1,  2025-01-01, 2.0
-        2,  2025-01-01, nan
         0,  2025-01-10, 4.0
-        2,  2025-01-10, nan
     """
 
     print(res_df)

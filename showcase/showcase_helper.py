@@ -1,8 +1,8 @@
 """Helper utilities for PredQL showcase notebooks."""
 
 from antlr4 import CommonTokenStream, InputStream, TerminalNode
-from predql.base import Database
 
+from predql.base import Database
 from predql.converter import Converter, SConverter, TConverter
 from predql.parser.gen.LexerPredQL import LexerPredQL
 from predql.parser.gen.ParserPredQL import ParserPredQL
@@ -52,7 +52,7 @@ class ConverterShowcaseHelper:
     def convert_query(self, query):
         print("========================================")
         print(query)
-        table = self.predql_converter.convert(query, show=True)
+        table = self.predql_converter.convert(query, execute=True)
         print(table)
         print("========================================")
 

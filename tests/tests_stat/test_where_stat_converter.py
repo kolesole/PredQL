@@ -12,7 +12,7 @@ def test_where_stat(static_converter):
         FOR EACH students.studentId
         WHERE studyInf.studyYear <= 3;
     """
-    res_table = static_converter.convert(pql_query)
+    res_table = static_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
@@ -48,7 +48,7 @@ def test_nested_where_stat(static_converter,
         WHERE (studyInf.studyYear >= 1 {pql_op} students.name CONTAINS "e")
         OR studyInf.studyYear IS NULL;
     """
-    res_table = static_converter.convert(pql_query)
+    res_table = static_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col

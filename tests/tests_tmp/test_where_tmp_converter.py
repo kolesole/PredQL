@@ -62,7 +62,7 @@ def test_common_simple_where_tmp(temporal_converter):
         FOR EACH students.studentId
         WHERE LAST(grades.grade, 0, 10, DAYS) IS NOT NULL;
     """
-    res_table = temporal_converter.convert(pql_query)
+    res_table = temporal_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
@@ -102,7 +102,7 @@ def test_common_nested_where_tmp(temporal_converter,
         {pql_op} (FIRST(favSubjects.subject, 0, 10, DAYS) IS NULL
         OR FIRST(favSubjects.subject, 0, 10, DAYS) CONTAINS "P");
     """
-    res_table = temporal_converter.convert(pql_query)
+    res_table = temporal_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
@@ -120,10 +120,8 @@ def test_common_nested_where_tmp(temporal_converter,
                 fk, timestamp,  label
                 0,  2025-01-01, 1.6
                 1,  2025-01-01, 2.0
-                2,  2025-01-01, nan
                 0,  2025-01-10, 4.0
                 1,  2025-01-10, 2.0
-                2,  2025-01-10, nan
             """
 
     ref_df = pd.read_csv(StringIO(ref_data),

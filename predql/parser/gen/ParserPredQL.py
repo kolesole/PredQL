@@ -39,8 +39,8 @@ def serializedATN():
         0,0,0,55,56,1,0,0,0,56,57,5,33,0,0,57,3,1,0,0,0,58,59,3,10,5,0,59,
         61,3,6,3,0,60,62,3,16,8,0,61,60,1,0,0,0,61,62,1,0,0,0,62,63,1,0,
         0,0,63,64,5,33,0,0,64,5,1,0,0,0,65,66,5,2,0,0,66,67,5,42,0,0,67,
-        68,5,28,0,0,68,70,5,42,0,0,69,71,3,16,8,0,70,69,1,0,0,0,70,71,1,
-        0,0,0,71,7,1,0,0,0,72,73,5,3,0,0,73,77,3,40,20,0,74,75,5,6,0,0,75,
+        68,5,28,0,0,68,70,7,0,0,0,69,71,3,16,8,0,70,69,1,0,0,0,70,71,1,0,
+        0,0,71,7,1,0,0,0,72,73,5,3,0,0,73,77,3,40,20,0,74,75,5,6,0,0,75,
         78,5,39,0,0,76,78,5,5,0,0,77,74,1,0,0,0,77,76,1,0,0,0,77,78,1,0,
         0,0,78,82,1,0,0,0,79,80,5,3,0,0,80,82,3,18,9,0,81,72,1,0,0,0,81,
         79,1,0,0,0,82,9,1,0,0,0,83,84,5,3,0,0,84,88,3,42,21,0,85,86,5,6,
@@ -438,6 +438,9 @@ class ParserPredQL ( Parser ):
         def DOT(self):
             return self.getToken(ParserPredQL.DOT, 0)
 
+        def STAR(self):
+            return self.getToken(ParserPredQL.STAR, 0)
+
         def where_stat(self):
             return self.getTypedRuleContext(ParserPredQL.Where_statContext,0)
 
@@ -466,6 +469,7 @@ class ParserPredQL ( Parser ):
 
         localctx = ParserPredQL.For_eachContext(self, self._ctx, self.state)
         self.enterRule(localctx, 6, self.RULE_for_each)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 65
@@ -475,7 +479,12 @@ class ParserPredQL ( Parser ):
             self.state = 67
             self.match(ParserPredQL.DOT)
             self.state = 68
-            self.match(ParserPredQL.ID)
+            _la = self._input.LA(1)
+            if not(_la==32 or _la==42):
+                self._errHandler.recoverInline(self)
+            else:
+                self._errHandler.reportMatch(self)
+                self.consume()
             self.state = 70
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,4,self._ctx)

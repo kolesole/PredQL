@@ -289,6 +289,7 @@ public class ParserPredQL extends Parser {
 			return getToken(ParserPredQL.ID, i);
 		}
 		public TerminalNode DOT() { return getToken(ParserPredQL.DOT, 0); }
+		public TerminalNode STAR() { return getToken(ParserPredQL.STAR, 0); }
 		public Where_statContext where_stat() {
 			return getRuleContext(Where_statContext.class,0);
 		}
@@ -301,6 +302,7 @@ public class ParserPredQL extends Parser {
 	public final For_eachContext for_each() throws RecognitionException {
 		For_eachContext _localctx = new For_eachContext(_ctx, getState());
 		enterRule(_localctx, 6, RULE_for_each);
+		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
@@ -311,7 +313,15 @@ public class ParserPredQL extends Parser {
 			setState(67);
 			match(DOT);
 			setState(68);
-			match(ID);
+			_la = _input.LA(1);
+			if ( !(_la==STAR || _la==ID) ) {
+			_errHandler.recoverInline(this);
+			}
+			else {
+				if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+				_errHandler.reportMatch(this);
+				consume();
+			}
 			setState(70);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,4,_ctx) ) {
@@ -1474,7 +1484,7 @@ public class ParserPredQL extends Parser {
 		"\u0000<>\u0003\u0010\b\u0000=<\u0001\u0000\u0000\u0000=>\u0001\u0000\u0000"+
 		"\u0000>?\u0001\u0000\u0000\u0000?@\u0005!\u0000\u0000@\u0005\u0001\u0000"+
 		"\u0000\u0000AB\u0005\u0002\u0000\u0000BC\u0005*\u0000\u0000CD\u0005\u001c"+
-		"\u0000\u0000DF\u0005*\u0000\u0000EG\u0003\u0010\b\u0000FE\u0001\u0000"+
+		"\u0000\u0000DF\u0007\u0000\u0000\u0000EG\u0003\u0010\b\u0000FE\u0001\u0000"+
 		"\u0000\u0000FG\u0001\u0000\u0000\u0000G\u0007\u0001\u0000\u0000\u0000"+
 		"HI\u0005\u0003\u0000\u0000IM\u0003(\u0014\u0000JK\u0005\u0006\u0000\u0000"+
 		"KN\u0005\'\u0000\u0000LN\u0005\u0005\u0000\u0000MJ\u0001\u0000\u0000\u0000"+

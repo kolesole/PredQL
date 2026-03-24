@@ -20,7 +20,7 @@ def test_num_cond_tmp(temporal_converter,
         PREDICT AVG(grades.grade, 0, 10, DAYS) {pql_cond} 2.0
         FOR EACH students.studentId;
     """
-    res_table = temporal_converter.convert(pql_query)
+    res_table = temporal_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
@@ -117,7 +117,7 @@ def test_str_cond_tmp(temporal_converter,
         PREDICT FIRST(favSubjects.subject, 0, 10, DAYS) {pql_cond} "P"
         FOR EACH students.studentId;
     """
-    res_table = temporal_converter.convert(pql_query)
+    res_table = temporal_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
@@ -219,7 +219,7 @@ def test_null_cond_tmp(temporal_converter,
         PREDICT LAST(grades.grade, 0, 10, DAYS) {pql_cond}
         FOR EACH students.studentId;
     """
-    res_table = temporal_converter.convert(pql_query)
+    res_table = temporal_converter.convert(pql_query, execute=True)
     res_df = res_table.df
     res_fkey_col_to_pkey_table = res_table.fkey_col_to_pkey_table
     res_pkey_col = res_table.pkey_col
