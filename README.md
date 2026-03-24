@@ -1,20 +1,27 @@
-# PredQL 
+# PredQL
 
-**PredQL** (Predictive Query Language) is a Python framework that simplifies working with databases for **Relational Deep Learning (RDL)**.
+**PredQL** (Predictive Query Language) is a Python framework for writing compact, expressive predictive queries over relational data, especially for Relational Deep Learning.
 
 It lets you write shorter, more expressive queries by abstracting temporal joins and complex aggregations.
 
 ## 🧠 Features
 
-- 🎯 **ANTLR-based Parser** - Lexer and parser for PredQL syntax
+- 🎯 **ANTLR-based Parser** 
+  - Lexer and parser for PredQL syntax
 
-- 🌳 **Parse Tree Visitor** - Transforms PredQL queries into structured dictionaries
+- 🌳 **Structured parse-tree visitor**
+  - Converts parsed queries into normalized dictionaries with source positions.
 
-- 🔀 **Dual Converters** - Static and temporal SQL conversion
-  - 📌 `SConverter` - Non-temporal predictions
-  - ⏰ `TConverter` - Time-window based temporal predictions with automatic time bucketing
+- 🔍 **Semantic validation**
+  - Schema-aware query validation with error reporting.
 
-- ⚙️ **Automatic Execution** - Executes generated SQL and returns results as ready-to-use table objects
+- 🔀 **Two converters**
+  - 📌 `SConverter` for static prediction queries.
+  - ⏰ `TConverter` for temporal prediction queries with timestamp windows.
+
+- ⚙️ **Dual output mode**
+  - `execute=False` returns generated SQL.
+  - `execute=True` executes SQL and returns a `Table` object.
 
 ## ⚙️ Installation
 
@@ -26,199 +33,137 @@ pip install predql
 
 ## 🚀 Quickstart
 
-### 📌 Static Query
+### 1. Build your database as [RelBench](https://github.com/snap-stanford/relbench) `Database` object or use simplified PredQL version 
 
-#### 🌪️ Query design
-
-```sql
-PREDICT <target_table>.<target_column>
-FOR EACH <entity_table>.<primary_key>
-[WHERE <condition>|<nested_condition>] 
+```python
+# path to classes
+from predql.base import Database, Table
 ```
 
-#### 🗒️ NOTES
-
-- Every table you reference must contain a `<foreign_key>` that matches the `<entity_table>` `<primary_key>`
-
-- `<condition>` design:
-
-    ```sql
-    <table>.<column> <num_condition>|<str_condition>|<null_condition>
-    ```
-    | Category    | Operators | Right side |
-    | :---        | :---      | :--- |
-    | **Numeric** | `!=`, `<`, `<=`, `==`, `>`, `>=` | NUMBER
-    | **String** | `CONTAINS`, `NOT CONTAINS`, `LIKE`, `NOT LIKE`, `STARTS WITH`, `ENDS WITH`, `=` | STRING
-    | **Nullability** | `IS NULL`, `IS NOT NULL` | |
-
-- Static converter returns a table with:
-    - `fk` - `<primary_key>` from `<entity_table>`
-    - `label` - predicted value
-
-#### 💡 Examples 
+### 2. Static query with `SConverter`
 
 ```python
 from predql.converter import SConverter
-from predql.base import Database
 
-# load your database with tables
-db = Database(...)
-
-# create converter
 converter = SConverter(db)
 
-# predicting student favorite subject
-example_query1 = """                   
-    PREDICT studentInf.favSubject     
-    FOR EACH students.studentId;     
-"""                                   
-result_table1 = converter.convert(example_query1)
+predql_query = """
+    PREDICT COUNT_DISTINCT(votes.* 
+        WHERE votes.votetypeid == 2)
+    FOR EACH posts.* WHERE posts.PostTypeId == 1
+                       AND posts.OwnerUserId IS NOT NULL
+                       AND posts.OwnerUserId != -1;
+"""
 
-# predicting student favorite subject for students older than 20
-example_query2 = """                   
-    PREDICT studentInf.favSubject     
-    FOR EACH students.studentId
-    WHERE studentInf.age > 20;     
-"""                                   
-result_table2 = converter.convert(example_query2)
+# SQL only
+sql_query = converter.convert(predql_query, execute=False)
 
-# get dataframes
-df1 = result_table1.df()
-df2 = result_table2.df()
+# execute and get Table(fk, label)
+table = converter.convert(predql_query, execute=True)
 ```
 
-### ⏰ Temporal Query
-
-#### 🌪️ Query design
-
-```sql
-PREDICT <aggregation>
-FOR EACH <entity_table>.<primary_key>
-[ASSUMING <condition>|<nested_condition>]
-[WHERE <condition>|<nested_condition>] 
-```
-
-#### 🗒️ NOTES
-
-- Every table you reference must contain a `<foreign_key>` that matches the `<entity_table>` `<primary_key>`
-
-- `<condition>` design:
-
-    ```sql
-    <aggregation> <num_condition>|<str_condition>|<null_condition>
-    ```
-    `<num_condition>`, `<str_condition>`, `<null_condition>` - The same as in static
-
-- `<aggregation>` design:
-
-    ```sql
-    <aggr_func>(<target_table>.<target_column>, <start>, <end>, <measure_unit>) [<RANK TOP K>|<CLASSIFY>]
-    ```
-    `<RANK TOP K>` and `<CLASSIFY>` apply only to `LIST_DISTINCT`; `K` must be a positive integer\
-    `<RANK TOP K>` returns the first `K` elements (by frequency), `<CLASSIFY>` or omitting both returns all elements
-    
-- Available aggregation functions:
-
-    | Function | Description | Can be used in condition
-    | :--- | :--- | :--- |
-    | `AVG` | Average value| ✅
-    | `MAX` | Maximum value| ✅
-    | `MIN` | Minimum value| ✅
-    | `SUM` | Sum of values| ✅
-    | `COUNT` | Count of non-null values| ✅
-    | `COUNT_DISTINCT` | Count of distinct values| ✅
-    | `FIRST` | First value (ordered by time)| ✅
-    | `LAST` | Last value (ordered by time)| ✅
-    | `LIST_DISTINCT` | List of distinct values ordered by count| ❌
-
-- Time window parameters:
-
-    - `<start>` must be `≤ 0` for `ASSUMING` and `≥ 0` for `PREDICT`/`WHERE`
-    - `<end>` must be `≤ 0` for `ASSUMING` and `≥ 0` for `PREDICT`/`WHERE`
-    - `<measure_unit>`: `YEARS`, `MONTHS`, `WEEKS`, `DAYS`, `HOURS`, `MINUTES`, `SECONDS`
-
-- Time window is half-open: `[<start>, <end>)`
-
-- `ASSUMING` filters past context (per timestamp)
-
-- `WHERE` filters future context (per timestamp)
-
-- Temporal converter returns a table with:
-
-    - `fk` - `<primary_key>` from `<entity_table>`
-    - `timestamp` - timestamps you provide to the converter
-    - `label` - predicted value
-
-#### 💡 Example
+### 3. Temporal query with `TConverter`
 
 ```python
-from predql.converter import TConverter
-from predql.base import Database
 import pandas as pd
+from predql.converter import TConverter
 
-# create timestamps for temporal windows
-timestamps = pd.to_datetime(["2025-01-01", "2025-01-15"])
-
-# load your database with tables
-db = Database(...)
-
-# create temporal converter
+timestamps = pd.Series(...) # define timestamps for which prediction must be made
 converter = TConverter(db, timestamps)
 
-# predicting average student grade over 10-day windows
-example_query1 = """
-    PREDICT AVG(grades.grade, 0, 10, DAYS)
-    FOR EACH students.studentId;
-"""
-result_table1 = converter.convert(example_query1)
+# also, it is possible to update prediction timestamps later without recreating converter
+converter.set_timestamps(new_timestamps)
 
-# predicting average student grade over 10-day windows
-# for students whose average grade in previous 10 days is > 2
-# and whose average grade in the subsequent 10 days is < 3
-example_query2 = """
-    PREDICT AVG(grades.grade, 0, 10, DAYS)
-    FOR EACH students.studentId
-    ASSUMING AVG(grades.grade, -10, 0, DAYS) > 2
-    WHERE AVG(grades.grade, 10, 20, DAYS) < 3;
+predql_query = """
+    PREDICT COUNT_DISTINCT(votes.* 
+        WHERE votes.votetypeid == 2, 0, 91, DAYS)
+    FOR EACH posts.* WHERE posts.PostTypeId == 1
+                       AND posts.OwnerUserId IS NOT NULL
+                       AND posts.OwnerUserId != -1;
 """
-result_table2 = converter.convert(example_query2)
 
-# get dataframes
-df1 = result_table1.df()
-df2 = result_table2.df()
+# SQL only
+sql_query = converter.convert(predql_query, execute=False)
+
+# execute and get Table(fk, timestamp, label)
+table = converter.convert(predql_query, execute=True)
 ```
+
+## 📐 Query Language
+
+### 📌 Static query design
+
+```sql
+PREDICT <aggregation | expression | table.column> [RANK TOP K | CLASSIFY]
+FOR EACH <entity_table>.<primary_key>
+[WHERE <static_condition | static_nested_expression>];
+```
+
+### ⏰ Temporal query shape
+
+```sql
+PREDICT <aggregation | temporal_expression> [RANK TOP K | CLASSIFY]
+FOR EACH <entity_table>.<primary_key> [WHERE <static_condition | static_nested_expression>]
+[ASSUMING <temporal_condition | temporal_nested_expression>]
+[WHERE <temporal_condition | temporal_nested_expression>];
+```
+
+### 🧮 Aggregations
+
+| Function | Meaning | Condition-Compatible |
+| :--- | :--- | :--- |
+| `AVG` | average | ✅ |
+| `MAX` | maximum | ✅ |
+| `MIN` | minimum | ✅ |
+| `SUM` | sum | ✅ |
+| `COUNT` | non-null count | ✅ |
+| `COUNT_DISTINCT` | distinct count | ✅ |
+| `FIRST` | earliest value by time | ✅ |
+| `LAST` | latest value by time | ✅ |
+| `LIST_DISTINCT` | list of distinct values | ❌ |
+
+### 🧭 Temporal window rules
+
+- Window format: `<start>, <end>, <measure_unit>`.
+- Supported units: `YEARS`, `MONTHS`, `WEEKS`, `DAYS`, `HOURS`, `MINUTES`, `SECONDS`.
+- Window semantics are half-open: `(start, end]`.
+- `PREDICT`/`WHERE`: `start` and `end` must be non-negative.
+- `ASSUMING`: `start` and `end` must be non-positive.
+- `start` must be strictly less than `end`.
 
 ## 🏗️ Architecture
 
-```
+```text
 PredQL Query String
     ↓
-[Lexer] → Tokens
+[Lexer] -> Tokens
     ↓
-[Parser] → Parse Tree
+[Parser] -> Parse Tree
     ↓
-[Visitor] → Dictionary
+[Visitor] -> Structured Dictionary
     ↓
-[Converter] → SQL Query
+[Validator] -> Semantic Checks
     ↓
-[DuckDB] → Result Table
+[Converter] -> SQL Query
+    ↓ (optional execute=True)
+[DuckDB] -> Result Table
 ```
 
 ## 🔧 Development
 
-### Install `uv`
+### Install uv
 
 - macOS & Linux
 
-    ```bash
-    wget -qO- https://astral.sh/uv/install.sh | sh
-    ```
+```bash
+wget -qO- https://astral.sh/uv/install.sh | sh
+```
 
 - Windows
 
-    ```bash
-    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-    ```
+```bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
 
 ### Install dependencies
 
@@ -226,15 +171,21 @@ PredQL Query String
 uv sync --all-extras
 ```
 
-### Regenerating the Parser
+### Regenerate parser files
 
-If you change the lexer or parser (`*.g4`), regenerate the ANTLR outputs from the repo root:
+If you modify lexer or parser grammar files (`*.g4`), regenerate ANTLR outputs from the repo root:
 
 ```bash
 ./regenerate_parser.sh
 ```
 
-### Running Linter
+### Run tests
+
+```bash
+pytest
+```
+
+### Run linter
 
 ```bash
 ruff check .
