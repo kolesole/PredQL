@@ -13,7 +13,7 @@ keywords = ["predictive-query-language", "sql", "temporal-data", "relational-lea
 dependencies = [
     "pandas>=2.2.0",
     "antlr4-python3-runtime>=4.13.2",
-    "duckdb>=1.0.0"
+    "duckdb>=1.0.0",
 ]
 
 [dependency-groups]
@@ -31,6 +31,7 @@ dev = [
     "relbench>=1.1.0",
     "tqdm>=4.66.0",
     "ruff>=0.14.10",
+    "redelex"
 ]
 torch = [
     "torch==2.4.0",
@@ -51,20 +52,26 @@ Issues = "https://github.com/kolesole/PredQL/issues"
 [tool.ruff]
 line-length = 121
 target-version = "py312"
+extend-exclude = ["experiments", "showcase", "tasks", "tests", "predql/parser/gen/**",]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "D"]
+select = [
+    "B",    # flake8-bugbear
+    "D",    # pydocstyle
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "SIM",  # flake8-simplify
+    "UP",   # pyupgrade
+    "W",    # pycodestyle warnings
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"predql/parser/gen/**" = ["E", "F", "W", "D", "I"] 
 "__init__.py" = ["F401"]
-"predql/visitor/**/*.py" = ["D"]
-"tests/**/*.py" = ["D", "E501"]
-"showcase/**/*.py" = ["D", "E501"]
-"showcase/**/*.ipynb" = ["D", "E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
