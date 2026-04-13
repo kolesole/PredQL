@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "predql"
-version = "0.1.0"
+version = "0.0.2"
 description = "PredQL: A framework providing a predictive query language for task generation in Relational Deep Learning"
 authors = [{ name = "Oleksii Kolesnichenko", email = "oleksii.kolesnichenko@gmail.com" }]
 readme = "README.md"
