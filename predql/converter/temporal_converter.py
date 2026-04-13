@@ -1,5 +1,7 @@
 """Temporal PredQL converter class for time-series queries."""
 
+import sys
+
 import pandas as pd
 
 from predql.base import Database, Table
@@ -44,6 +46,15 @@ class TConverter(Converter):
                     with columns (*fk*, *timestamp*, *label*) corresponding to the translated PredQL query output.
                     Otherawise, returns the generated SQL query string (if execute=False).
         """
+        # check that prediction timestamps are provided and not empty
+        if self.timestamps is None or self.timestamps.empty:
+            self.collector.val_error(
+                line=-1,
+                column=-1,
+                msg="For temporal conversion, prediction timestamps must be provided and cannot be empty"
+            )
+            sys.exit(1)
+        
         # parse PredQL query into dictionary
         query_dict = self.parse_query(predql_query)
         query_dict = query_dict["QueryTmp"].value
@@ -71,18 +82,20 @@ class TConverter(Converter):
 
         # fiter and add semicolon to end of SQL query
         label_fk = None
+        select_clause = "*"
         filt = "label IS NOT NULL"
         if aggr := predict_dict["Aggregation"]:
             aggr_dict = aggr.value
             if aggr_dict["AggrType"].value.lower() == "list_distinct":
                 filt = f"{filt} AND label != [NULL]"
+                select_clause = "fk, timestamp, list_filter(label, x -> x IS NOT NULL) AS label"
                 table, table_obj = self._find_table(aggr_dict["Table"].value)
                 column = self._find_column(table, aggr_dict["Column"].value)
 
                 label_fk = table if table_obj.pkey_col == column else table_obj.fkey_col_to_pkey_table.get(column)
 
         sql_query = (
-            f"{timestamp_cte}SELECT\n    *\nFROM\n  ({sql_query}\n)\nWHERE {filt}\nORDER BY timestamp ASC, fk ASC\n;\n"
+            f"{timestamp_cte}SELECT\n    {select_clause}\nFROM\n  ({sql_query}\n)\nWHERE {filt}\nORDER BY timestamp ASC, fk ASC\n;\n"
         )
 
         if not execute:

@@ -58,17 +58,19 @@ class SConverter(Converter):
 
         # fiter and add semicolon to end of SQL query
         label_fk = None
+        select_clause = "*"
         filt = "label IS NOT NULL"
         if aggr := predict_dict["Aggregation"]:
             aggr_dict = aggr.value
             if aggr_dict["AggrType"].value.lower() == "list_distinct":
                 filt = f"{filt} AND label != [NULL]"
+                select_clause = "fk, list_filter(label, x -> x IS NOT NULL) AS label"
                 table, table_obj = self._find_table(aggr_dict["Table"].value)
                 column = self._find_column(table, aggr_dict["Column"].value)
 
                 label_fk = table if table_obj.pkey_col == column else table_obj.fkey_col_to_pkey_table.get(column)
 
-        sql_query = f"SELECT\n    *\nFROM\n  ({sql_query}\n)\nWHERE {filt}\nORDER BY fk ASC\n;\n"
+        sql_query = f"SELECT\n    {select_clause}\nFROM\n  ({sql_query}\n)\nWHERE {filt}\nORDER BY fk ASC\n;\n"
 
         if not execute:
             return sql_query

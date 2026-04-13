@@ -144,7 +144,7 @@ def test_list_distinct_tmp(temporal_converter,
     match list_distinct_op:
         case "" | "CLASSIFY" | "RANK TOP 3":
             ref_data = [
-                {"fk": 0, "timestamp": "2025-01-01", "label": [0.0, 1.0, 2.0]}, # [2, 1, nan]
+                {"fk": 0, "timestamp": "2025-01-01", "label": [1.0, 2.0]}, # [2, 1]
                 {"fk": 1, "timestamp": "2025-01-01", "label": [2.0]},
                 {"fk": 0, "timestamp": "2025-01-10", "label": [4.0]},
                 {"fk": 1, "timestamp": "2025-01-10", "label": [1.0, 4.0]}
